@@ -1,5 +1,8 @@
 package zenith.objects;
 
+import flixel.math.FlxRect;
+import flixel.math.FlxMath;
+
 class NoteObject extends FlxSprite
 {
 	// The data that is set from the chart for every time a note spawns
@@ -8,65 +11,72 @@ class NoteObject extends FlxSprite
 
 	// For the sustain note
 	public var isSustain:Bool;
-	public var _clip:Float = 1.0;
-
-	public var strum:StrumNote;
 
 	public var distance:Float = 20.0;
 	public var direction:Float;
 
 	public var wasHit:Bool = false;
+	public var missed:Bool = false;
 
-	inline function set_direction(dir:Float):Float
+	// Random internals for when I removed the ``strum`` variable to save space on this class (Will remove)
+	var _scrollMult:Float = 1.0;
+	var strum_scale_y:Float = 1.0;
+
+	/**
+	 * Calculates the smallest globally aligned bounding box that encompasses this sprite's graphic as it
+	 * would be displayed. Honors scrollFactor, rotation, scale, offset and origin.
+	 * @param newRect Optional output `FlxRect`, if `null`, a new one is created.
+	 * @param camera  Optional camera used for scrollFactor, if null `FlxG.camera` is used.
+	 * @return A globally aligned `FlxRect` that fully contains the input sprite.
+	 * @since 4.11.0
+	 */
+	override public function getScreenBounds(?newRect:FlxRect, ?camera:FlxCamera)
 	{
-		return @:bypassAccessor angle = isSustain ? (direction = dir) + (strum.scrollMult < 0.0 ? 180.0 : 0.0) : 0.0;
-	}
+		if (newRect == null)
+			newRect = FlxRect.get();
 
-	override function draw()
-	{
-		scale.x = strum.scale.x;
-		scale.y = strum.scale.y;
+		if (_frame == null)
+			return newRect.getRotatedBounds(angle, _scaledOrigin, newRect);
 
-		if (isSustain)
-		{
-			_frame.frame.y = -(sustainLength * _clip) * (((PlayState.instance.songSpeed ?? 1.0) * 0.6428571428571431) / (strum.scale.y * 1.428571428571429));
-			_frame.frame.height = (-_frame.frame.y * (strum.scrollMult < 0.0 ? -strum.scrollMult : strum.scrollMult)) + frameHeight;
-		}
-		else
-		{
-			_frame.frame.y = 0.0;
-			_frame.frame.height = frameHeight;
-		}
+		if (camera == null)
+			camera = FlxG.camera;
 
-		if (_frame.frame.height < 0.0)
-			return;
+		if (!isSustain)
+			return super.getScreenBounds(newRect, camera);
 
-		@:bypassAccessor height = _frame.frame.height * (scale.y < 0.0 ? -scale.y : scale.y);
+		newRect.x = x;
+		newRect.y = y;
 
-		offset.x = offset.y = 0.0;
-		origin.x = frameWidth >> 1;
-		origin.y = isSustain ? 0.0 : frameHeight >> 1;
+		_scaledOrigin.x = origin.x * scale.x;
+		_scaledOrigin.y = origin.y * scale.y;
 
-		super.draw();
-	}
+		newRect.x += (-Std.int(camera.scroll.x * scrollFactor.x) - offset.x + origin.x - _scaledOrigin.x);
+		newRect.y += (-Std.int(camera.scroll.y * scrollFactor.y) - offset.y + origin.y - _scaledOrigin.y);
 
-	public function new(noteData:UInt = 0, lane:UInt = 0, setUp:Bool = false)
+		newRect.width = _frame.frame.width * (scale.x < 0.0 ? -scale.x : scale.x);
+		newRect.height = _frame.frame.height * (scale.y < 0.0 ? -scale.y : scale.y);
+
+		return newRect.getRotatedBounds(angle, _scaledOrigin, newRect);
+	} // Please don't remove this
+
+	public function new(strum:StrumNote = null)
 	{
 		super();
+
 		@:bypassAccessor active = moves = false;
 
-		if (!setUp)
+		if (strum == null)
+		{
 			return;
+		}
 
-		strum = PlayState.instance.strumlines[lane].members[noteData];
-		color = strum.parent.noteColors[noteData];
-		@:bypassAccessor angle = !isSustain ? strum.angle : 0.0;
+		color = strum.parent.noteColors[strum.noteData];
 	}
 
-	inline public function renew(sustain:Bool, _position:Float, _sustainLength:Int):NoteObject
+	inline public function renew(sustain:Bool, _position:Float, _sustainLength:Int)
 	{
 		isSustain = sustain;
-		wasHit = false;
+		wasHit = missed = false;
 
 		frames = !isSustain ? Paths.noteAnimationHolder.frames : Paths.sustainAnimationHolder.frames;
 		animation.copyFrom(!isSustain ? Paths.noteAnimationHolder.animation : Paths.sustainAnimationHolder.animation);
@@ -77,18 +87,40 @@ class NoteObject extends FlxSprite
 
 		direction = 0.0;
 
-		scale.set(strum.scale.x, strum.scale.y);
-
-		return this;
+		// Don't remove this. Unless you want to :trollface:
+		@:bypassAccessor y = FlxG.height;
 	}
 
 	override function update(elapsed:Float) {}
 
 	// Does this really need to be inlined?
 	// Yes.
-	inline public function hit()
+	inline public function hit(strum:StrumNote)
 	{
 		@:bypassAccessor exists = isSustain;
-		wasHit = true;
+		strum.playAnim("confirm");
+		wasHit = !isSustain || PlayState.instance.songPosition + (frameHeight << 1) > position + sustainLength;
+	}
+
+	inline function _updateNoteFrame(strum:StrumNote)
+	{
+		_frame.frame.y = 0.0;
+		_frame.frame.height = frameHeight;
+
+		if (isSustain)
+		{
+			_frame.frame.y = -sustainLength * ((PlayState.instance.songSpeed * 0.45) / strum.scale.y);
+			_frame.frame.height = (-_frame.frame.y * (strum.scrollMult < 0.0 ? -strum.scrollMult : strum.scrollMult)) + frameHeight;
+			angle = direction;
+
+			if (strum.scrollMult < 0.0)
+				angle += 180;
+		}
+
+		@:bypassAccessor height = _frame.frame.height * (scale.y < 0.0 ? -scale.y : scale.y);
+
+		offset.x = offset.y = 0.0;
+		origin.x = frameWidth >> 1;
+		origin.y = isSustain ? 0.0 : frameHeight >> 1;
 	}
 }

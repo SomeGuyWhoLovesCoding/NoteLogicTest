@@ -5,8 +5,10 @@ import lime.app.Application;
 
 class PlayState extends FlxState
 {
+	private var chartBytesData:ChartBytesData;
+
 	public var strumlines:Array<Strumline> = [];
-	public var songSpeed:Float = 2;
+	public var songSpeed:Float = 3;
 	public var songPosition:Float = -1000.0;
 
 	static public var instance:PlayState;
@@ -19,10 +21,23 @@ class PlayState extends FlxState
 
 		instance = this;
 
-		FlxG.cameras.bgColor = 0xFF999999;
+		chartBytesData = new ChartBytesData('normal');
+
+		//FlxG.cameras.bgColor = 0xFF999999;
+		FlxG.camera.bgColor.alpha = 0;
 
 		for (player in 0...2)
 			strumlines.push(new Strumline(4, player, player == 1));
+
+		// Pretend that this is Utils.strumlineChangeDownScroll but extracted
+
+		var playerStrum = strumlines[1];
+
+		for (i in 0...playerStrum.members.length)
+			playerStrum.members[i].scrollMult = -1.0;
+
+		playerStrum.downScroll = true;
+		playerStrum.y = FlxG.height - 160.0;
 
 		resetKeybinds([[0x61], [0x73], [1073741906], [1073741903]]);
 
@@ -30,6 +45,8 @@ class PlayState extends FlxState
 
 		Application.current.window.onKeyDown.add(onKeyDown);
 		Application.current.window.onKeyUp.add(onKeyUp);
+
+		openfl.system.System.gc();
 	}
 
 	override public function destroy()
@@ -39,6 +56,7 @@ class PlayState extends FlxState
 	}
 
 	var inputKeybinds:Array<StrumNote> = [];
+
 	public function resetKeybinds(?customBinds:Array<Array<Int>>):Void
 	{
 		final playerStrum = strumlines[1]; // Prevent redundant array access
@@ -85,12 +103,14 @@ class PlayState extends FlxState
 	}
 
 	var _songPos(default, null):Float = 0.0;
+
 	override public function update(elapsed:Float)
 	{
 		songPosition += elapsed * 1000.0;
+		//chartBytesData.update();
 
 		if (songPosition + 700.0 > _songPos)
-			strumlines[1].members[FlxG.random.int(0, 3)].spawnNote(_songPos += 160.0);
+			strumlines[1].members[FlxG.random.int(0, 21) % 4].spawnNote(_songPos += 120.0);
 
 		super.update(elapsed);
 	}

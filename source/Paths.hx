@@ -107,7 +107,6 @@ class Paths
 		idleStrumNote.parent = idleStrumline;
 		idleStrumNote._reset();
 
-		idleNote.strum = idleStrumNote;
 		idleNote.active = idleStrumNote.active = idleNote.visible = idleStrumNote.visible = false;
 	}
 }

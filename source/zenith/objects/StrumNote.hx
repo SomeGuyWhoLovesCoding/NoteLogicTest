@@ -1,9 +1,11 @@
+// Side note: please don't use @:bypassAccessor on angle for xml animations if you don't put animation.update(0) after it at the cost of a tiny overhead
 package zenith.objects;
 
 import flixel.math.FlxRect;
 import flixel.math.FlxMath;
 import flixel.math.FlxAngle;
 
+@:access(zenith.objects.NoteObject)
 class StrumNote extends FlxSprite
 {
 	public var noteData:UInt = 0;
@@ -16,6 +18,9 @@ class StrumNote extends FlxSprite
 		animation.finishCallback = value ? null : finishCallbackFunc;
 		return playable = value;
 	}
+
+	var initial_width:Int = 0;
+	var initial_height:Int = 0;
 
 	public var parent:Strumline;
 	public var index:UInt = 0;
@@ -30,19 +35,26 @@ class StrumNote extends FlxSprite
 
 		notes = [];
 		_notePool = [];
+
+		_hittableNote = Paths.idleNote;
 	}
 
 	inline public function _reset()
 	{
 		frames = Paths.strumNoteAnimationHolder.frames;
 		animation.copyFrom(Paths.strumNoteAnimationHolder.animation);
-		@:bypassAccessor angle = parent?.noteAngles[noteData];
+		@:bypassAccessor angle = parent.noteAngles[noteData];
 		playAnim("static");
+
+		// Note: frameWidth and frameHeight only works for this lmao
+		initial_width = frameWidth;
+		initial_height = frameHeight;
 	}
 
 	override function update(elapsed:Float)
 	{
-		animation.update(elapsed);
+		if (active)
+			animation.update(elapsed);
 	}
 
 	inline public function playAnim(anim:String)
@@ -90,10 +102,11 @@ class StrumNote extends FlxSprite
 	}
 
 	// Note system
-
 	public var notes:Array<NoteObject>;
+
 	var _notePool(default, null):Array<NoteObject>;
 	var _note(default, null):NoteObject;
+	var _hittableNote(default, null):NoteObject; // The target note for the hitreg
 
 	override function draw()
 	{
@@ -103,69 +116,107 @@ class StrumNote extends FlxSprite
 
 	function renderNotes()
 	{
-		if (notes.length == 0)
+		if (notes.length != 0)
 		{
-			return;
-		}
-
-		for (i in 0...notes.length)
-		{
-			_note = notes[i];
-
-			if (@:bypassAccessor !_note.exists)
-				continue;
-
-			if (PlayState.instance.songPosition - _note.position > 700.0 / PlayState.instance.songSpeed)
+			for (i in 0...notes.length)
 			{
-				@:bypassAccessor _note.exists = false;
-				_notePool.push(_note);
-				continue;
+				_note = notes[i];
+
+				if (@:bypassAccessor !_note.exists)
+					continue;
+
+				_note.draw();
+
+				/**
+				 * For some reason, a weird bug appears which is that you can still hit the note if it has missed and even if it's outside the hitbox
+				 * So, please don't remove the second check in the if condition below this long comment. Istg (>X()
+				 */
+				if (!_note.wasHit && !_note.missed)
+				{
+					if (!_note.isSustain)
+					{
+						if (!playable)
+						{
+							// This is so stupid but hey it works
+							if (PlayState.instance.songPosition > _note.position)
+							{
+								_note.hit(this);
+								playAnim("confirm");
+							}
+						}
+						else
+						{
+							if (_hittableNote == Paths.idleNote
+								&& !_note.isSustain
+								&& _note.position - PlayState.instance.songPosition < 120.0
+								|| (_hittableNote.wasHit
+									|| _hittableNote.position > _note.position)) // Might implement a feature that consists of 
+							{
+								_hittableNote = _note;
+							}
+						}
+
+						if (_hittableNote != Paths.idleNote && PlayState.instance.songPosition - (_hittableNote.position + _hittableNote.sustainLength) > 240.0 / PlayState.instance.songSpeed)
+						{
+							//trace("Note miss " + noteData);
+							_hittableNote.missed = true;
+							_hittableNote = Paths.idleNote;
+						}
+					}
+					else
+					{
+						
+					}
+				}
+
+				if (PlayState.instance.songPosition - (_note.position + _note.sustainLength) > 480.0 / PlayState.instance.songSpeed)
+				{
+					@:bypassAccessor _note.exists = false;
+					_notePool.push(_note);
+					continue;
+				}
+
+				_note.distance = 0.45 * (PlayState.instance.songPosition - _note.position) * PlayState.instance.songSpeed;
+				_note._updateNoteFrame(this);
+
+				@:bypassAccessor
+				{
+					_note.x = x
+						+ (!_note.isSustain ? 0.0 : initial_width - Std.int(_note.width) >> 1)
+						+ ((scrollMult < 0.0 ? -scrollMult : scrollMult) * _note.distance) * FlxMath.fastCos(FlxAngle.asRadians(_note.direction - 90.0));
+					_note.y = y
+						+ (!_note.isSustain ? 0.0 : initial_height >> 1)
+						+ (scrollMult * _note.distance) * FlxMath.fastSin(FlxAngle.asRadians(_note.direction - 90.0));
+				}
 			}
-
-			_note.distance = 0.45 * (PlayState.instance.songPosition - _note.position) * PlayState.instance.songSpeed;
-
-			@:bypassAccessor
-			{
-				_note.x = x + ((scrollMult < 0.0 ? -scrollMult : scrollMult) * _note.distance) * FlxMath.fastCos(FlxAngle.asRadians(_note.direction - 90.0));
-				_note.y = y + (scrollMult * _note.distance) * FlxMath.fastSin(FlxAngle.asRadians(_note.direction - 90.0));
-			}
-
-			_note.draw();
 		}
 	}
 
-	public function spawnNote(position:Single, sustainLength:Int = 0):NoteObject
+	inline public function spawnNote(position:Float, sustainLength:Int = 0)
 	{
-		var note:NoteObject = _notePool.pop() ?? (notes[notes.length] = new NoteObject(noteData, player, true));
+		var note:NoteObject = _notePool.pop() ?? (notes[notes.length] = new NoteObject(this));
+		note.renew(false, position, sustainLength << 5);
+		note.angle = angle;
 		@:bypassAccessor note.exists = true;
 
 		if (note.sustainLength >= 20 && !note.isSustain)
 		{
-			var note:NoteObject = _notePool.pop() ?? (notes[notes.length] = new NoteObject(noteData, player, true)).renew(true, position, sustainLength);
+			var note:NoteObject = _notePool.pop() ?? (notes[notes.length] = new NoteObject(this));
+			note.renew(true, position, sustainLength << 5);
+			note.angle = 0.0;
 			@:bypassAccessor note.exists = true;
 		}
-
-		return note.renew(false, position, sustainLength);
 	}
 
-	public function handlePress()
+	// Only 2 lines of code for the hitreg behaviour (not including the if condition)
+	inline public function handlePress()
 	{
-		if (notes.length == 0)
+		if (_hittableNote != Paths.idleNote)
 		{
-			return;
+			_hittableNote.hit(this);
+			_hittableNote = Paths.idleNote;
 		}
-
-		// Trying to brainstorm a concept of the fastest note hitreg ever
-		/*if (!_hittableNote.wasHit)
-		{
-			_hittableNote.hit();
-			playAnim("confirm");
-			_notePool.push(_hittableNote);
-		}*/
 	}
 
-	public function handleRelease()
-	{
-		
-	}
+	public function handleRelease() {}
 }
