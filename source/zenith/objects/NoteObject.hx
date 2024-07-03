@@ -6,21 +6,16 @@ import flixel.math.FlxMath;
 class NoteObject extends FlxSprite
 {
 	// The data that is set from the chart for every time a note spawns
-	public var position:Float;
-	public var sustainLength:Int;
+	public var position:Int;
+	public var sustainLength:NoteState.UInt8;
 
 	// For the sustain note
 	public var isSustain:Bool;
 
-	public var distance:Float = 20.0;
-	public var direction:Float;
+	public var distance:Single = 20.0;
+	public var direction:Single;
 
-	public var wasHit:Bool = false;
-	public var missed:Bool = false;
-
-	// Random internals for when I removed the ``strum`` variable to save space on this class (Will remove)
-	var _scrollMult:Float = 1.0;
-	var strum_scale_y:Float = 1.0;
+	public var state:NoteState.UInt8 = NoteState.IDLE;
 
 	/**
 	 * Calculates the smallest globally aligned bounding box that encompasses this sprite's graphic as it
@@ -73,10 +68,10 @@ class NoteObject extends FlxSprite
 		color = strum.parent.noteColors[strum.noteData];
 	}
 
-	inline public function renew(sustain:Bool, _position:Float, _sustainLength:Int)
+	inline public function renew(sustain:Bool, _position:Int, _sustainLength:NoteState.UInt8)
 	{
 		isSustain = sustain;
-		wasHit = missed = false;
+		state = NoteState.IDLE;
 
 		frames = !isSustain ? Paths.noteAnimationHolder.frames : Paths.sustainAnimationHolder.frames;
 		animation.copyFrom(!isSustain ? Paths.noteAnimationHolder.animation : Paths.sustainAnimationHolder.animation);
@@ -97,9 +92,16 @@ class NoteObject extends FlxSprite
 	// Yes.
 	inline public function hit(strum:StrumNote)
 	{
-		@:bypassAccessor exists = isSustain;
-		strum.playAnim("confirm");
-		wasHit = !isSustain || PlayState.instance.songPosition + (frameHeight << 1) > position + sustainLength;
+		if (state != NoteState.HIT)
+		{
+			@:bypassAccessor exists = isSustain;
+			strum.playAnim("confirm");
+
+			if (!isSustain || PlayState.instance.songPosition + (frameHeight << 1) > position + sustainLength)
+			{
+				state = NoteState.HIT;
+			}
+		}
 	}
 
 	inline function _updateNoteFrame(strum:StrumNote)
@@ -109,7 +111,7 @@ class NoteObject extends FlxSprite
 
 		if (isSustain)
 		{
-			_frame.frame.y = -sustainLength * ((PlayState.instance.songSpeed * 0.45) / strum.scale.y);
+			_frame.frame.y = -(sustainLength << 5) * ((PlayState.instance.songSpeed * 0.45) / strum.scale.y);
 			_frame.frame.height = (-_frame.frame.y * (strum.scrollMult < 0.0 ? -strum.scrollMult : strum.scrollMult)) + frameHeight;
 			angle = direction;
 

@@ -8,8 +8,8 @@ class PlayState extends FlxState
 	private var chartBytesData:ChartBytesData;
 
 	public var strumlines:Array<Strumline> = [];
-	public var songSpeed:Float = 3;
-	public var songPosition:Float = -1000.0;
+	public var songSpeed:Float = 1;
+	public var songPosition:Float = 0.0;
 
 	static public var instance:PlayState;
 
@@ -39,7 +39,7 @@ class PlayState extends FlxState
 		playerStrum.downScroll = true;
 		playerStrum.y = FlxG.height - 160.0;
 
-		resetKeybinds([[0x61], [0x73], [1073741906], [1073741903]]);
+		resetKeybinds([[0x61, 1073741904], [0x73, 1073741905], [0x77, 1073741906], [0x64, 1073741903]]);
 
 		super.create();
 
@@ -102,15 +102,15 @@ class PlayState extends FlxState
 		}
 	}
 
-	var _songPos(default, null):Float = 0.0;
+	var _songPos(default, null):Single = 0.0;
 
 	override public function update(elapsed:Float)
 	{
 		songPosition += elapsed * 1000.0;
-		//chartBytesData.update();
+		chartBytesData.update();
 
-		if (songPosition + 700.0 > _songPos)
-			strumlines[1].members[FlxG.random.int(0, 21) % 4].spawnNote(_songPos += 120.0);
+		/*if (songPosition + 700.0 > _songPos)
+			strumlines[1].members[FlxG.random.int(0, 3)].spawnNote(Std.int(_songPos += 120.0));*/
 
 		super.update(elapsed);
 	}

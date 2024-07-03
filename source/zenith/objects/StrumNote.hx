@@ -131,7 +131,7 @@ class StrumNote extends FlxSprite
 				 * For some reason, a weird bug appears which is that you can still hit the note if it has missed and even if it's outside the hitbox
 				 * So, please don't remove the second check in the if condition below this long comment. Istg (>X()
 				 */
-				if (!_note.wasHit && !_note.missed)
+				if (_note.state == NoteState.IDLE)
 				{
 					if (!_note.isSustain)
 					{
@@ -148,18 +148,18 @@ class StrumNote extends FlxSprite
 						{
 							if (_hittableNote == Paths.idleNote
 								&& !_note.isSustain
-								&& _note.position - PlayState.instance.songPosition < 120.0
-								|| (_hittableNote.wasHit
-									|| _hittableNote.position > _note.position)) // Might implement a feature that consists of 
+								&& _note.position - PlayState.instance.songPosition < 175.0
+								|| (_hittableNote.state == NoteState.HIT
+									|| _hittableNote.position > _note.position)) // Might implement a feature that consists of constantly targeting the closest note to the strumnote
 							{
 								_hittableNote = _note;
 							}
 						}
 
-						if (_hittableNote != Paths.idleNote && PlayState.instance.songPosition - (_hittableNote.position + _hittableNote.sustainLength) > 240.0 / PlayState.instance.songSpeed)
+						if (_hittableNote != Paths.idleNote && PlayState.instance.songPosition - (_hittableNote.position + (_hittableNote.sustainLength << 5)) > 262.5 / PlayState.instance.songSpeed)
 						{
 							//trace("Note miss " + noteData);
-							_hittableNote.missed = true;
+							_hittableNote.state = NoteState.MISS;
 							_hittableNote = Paths.idleNote;
 						}
 					}
@@ -169,7 +169,7 @@ class StrumNote extends FlxSprite
 					}
 				}
 
-				if (PlayState.instance.songPosition - (_note.position + _note.sustainLength) > 480.0 / PlayState.instance.songSpeed)
+				if (PlayState.instance.songPosition - (_note.position + (_note.sustainLength << 5)) > 350.0 / PlayState.instance.songSpeed)
 				{
 					@:bypassAccessor _note.exists = false;
 					_notePool.push(_note);
@@ -192,17 +192,17 @@ class StrumNote extends FlxSprite
 		}
 	}
 
-	inline public function spawnNote(position:Float, sustainLength:Int = 0)
+	inline public function spawnNote(position:Int, sustainLength:NoteState.UInt8 = 0)
 	{
 		var note:NoteObject = _notePool.pop() ?? (notes[notes.length] = new NoteObject(this));
-		note.renew(false, position, sustainLength << 5);
+		note.renew(false, position, sustainLength);
 		note.angle = angle;
 		@:bypassAccessor note.exists = true;
 
-		if (note.sustainLength >= 20 && !note.isSustain)
+		if (note.sustainLength > 2 && !note.isSustain)
 		{
 			var note:NoteObject = _notePool.pop() ?? (notes[notes.length] = new NoteObject(this));
-			note.renew(true, position, sustainLength << 5);
+			note.renew(true, position, sustainLength);
 			note.angle = 0.0;
 			@:bypassAccessor note.exists = true;
 		}

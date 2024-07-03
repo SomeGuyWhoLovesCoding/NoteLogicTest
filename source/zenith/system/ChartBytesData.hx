@@ -4,8 +4,6 @@ import sys.io.FileInput;
 import sys.io.FileOutput;
 import sys.io.File;
 
-typedef UInt8 = #if cpp cpp.UInt8 #elseif hl hl.UI8 #else Int #end;
-
 class ChartBytesData
 {
 	public var input:FileInput;
@@ -78,9 +76,9 @@ class ChartBytesData
 	// This is 7 bytes in size for each note
 	// Proof: Int32 (4 bytes), UInt8 (1 byte), UInt8 (another 1 byte), and UInt8 (1 byte yet again)
 	var position(default, null):Int;
-	var noteData(default, null):UInt8;
-	var length(default, null):UInt8;
-	var lane(default, null):UInt8;
+	var noteData(default, null):NoteState.UInt8;
+	var length(default, null):NoteState.UInt8;
+	var lane(default, null):NoteState.UInt8;
 
 	public function update():Void
 	{
