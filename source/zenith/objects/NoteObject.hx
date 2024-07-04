@@ -31,7 +31,7 @@ class NoteObject extends FlxSprite
 			newRect = FlxRect.get();
 
 		if (_frame == null)
-			return newRect.getRotatedBounds(angle, _scaledOrigin, newRect);
+			return newRect.getRotatedBounds(@:bypassAccessor angle, _scaledOrigin, newRect);
 
 		if (camera == null)
 			camera = FlxG.camera;
@@ -39,17 +39,20 @@ class NoteObject extends FlxSprite
 		if (!isSustain)
 			return super.getScreenBounds(newRect, camera);
 
-		newRect.x = x;
-		newRect.y = y;
+		@:bypassAccessor
+		{
+			newRect.x = x;
+			newRect.y = y;
 
-		_scaledOrigin.x = origin.x * scale.x;
-		_scaledOrigin.y = origin.y * scale.y;
+			_scaledOrigin.x = origin.x * scale.x;
+			_scaledOrigin.y = origin.y * scale.y;
 
-		newRect.x += (-Std.int(camera.scroll.x * scrollFactor.x) - offset.x + origin.x - _scaledOrigin.x);
-		newRect.y += (-Std.int(camera.scroll.y * scrollFactor.y) - offset.y + origin.y - _scaledOrigin.y);
+			newRect.x += (-Std.int(camera.scroll.x * scrollFactor.x) - offset.x + origin.x - _scaledOrigin.x);
+			newRect.y += (-Std.int(camera.scroll.y * scrollFactor.y) - offset.y + origin.y - _scaledOrigin.y);
 
-		newRect.width = _frame.frame.width * (scale.x < 0 ? -scale.x : scale.x);
-		newRect.height = _frame.frame.height * (scale.y < 0 ? -scale.y : scale.y);
+			newRect.width = _frame.frame.width * (scale.x < 0 ? -scale.x : scale.x);
+			newRect.height = _frame.frame.height * (scale.y < 0 ? -scale.y : scale.y);
+		}
 
 		return newRect.getRotatedBounds(angle, _scaledOrigin, newRect);
 	} // Please don't remove this
@@ -99,23 +102,31 @@ class NoteObject extends FlxSprite
 
 	inline function _updateNoteFrame(strum:StrumNote)
 	{
-		_frame.frame.y = 0;
-		_frame.frame.height = frameHeight;
-
-		if (isSustain)
+		@:bypassAccessor
 		{
-			_frame.frame.y = -sustainLength * ((PlayState.instance.songSpeed * 0.45) / strum.scale.y);
-			_frame.frame.height = (-_frame.frame.y * (strum.scrollMult < 0 ? -strum.scrollMult : strum.scrollMult)) + frameHeight;
-			angle = direction;
+			_frame.frame.y = 0;
+			_frame.frame.height = frameHeight;
 
-			if (strum.scrollMult < 0)
-				angle += 180;
+			if (isSustain)
+			{
+				_frame.frame.y = -sustainLength * ((PlayState.instance.songSpeed * 0.45) / strum.scale.y);
+				_frame.frame.height = (-_frame.frame.y * (strum.scrollMult < 0 ? -strum.scrollMult : strum.scrollMult)) + frameHeight;
+				angle = direction;
+
+				if (strum.scrollMult < 0)
+					angle += 180;
+			}
+
+			height = _frame.frame.height * (scale.y < 0 ? -scale.y : scale.y);
+
+			offset.x = offset.y = 0;
+			origin.x = frameWidth >> 1;
+			origin.y = isSustain ? 0 : frameHeight >> 1;
 		}
+	}
 
-		@:bypassAccessor height = _frame.frame.height * (scale.y < 0 ? -scale.y : scale.y);
-
-		offset.x = offset.y = 0;
-		origin.x = frameWidth >> 1;
-		origin.y = isSustain ? 0 : frameHeight >> 1;
+	override function set_clipRect(rect:FlxRect):FlxRect
+	{
+		return @:bypassAccessor clipRect = rect;
 	}
 }

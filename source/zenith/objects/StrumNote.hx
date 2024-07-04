@@ -5,6 +5,7 @@ import flixel.math.FlxMath;
 import flixel.math.FlxAngle;
 
 @:access(zenith.objects.NoteObject)
+@:access(flixel.FlxCamera)
 class StrumNote extends FlxSprite
 {
 	public var noteData:NoteState.UInt8;
@@ -33,13 +34,15 @@ class StrumNote extends FlxSprite
 
 		_hittableNote = Paths.idleNote;
 		_hittableSustain = Paths.idleNote;
+
+		@:bypassAccessor moves = false;
 	}
 
 	inline public function _reset()
 	{
+		@:bypassAccessor angle = parent.noteAngles[noteData];
 		frames = Paths.strumNoteAnimationHolder.frames;
 		animation.copyFrom(Paths.strumNoteAnimationHolder.animation);
-		@:bypassAccessor angle = parent.noteAngles[noteData];
 		playAnim("static");
 
 		// Note: frameWidth and frameHeight only works for this lmao
@@ -71,13 +74,13 @@ class StrumNote extends FlxSprite
 
 	override function set_clipRect(rect:FlxRect):FlxRect
 	{
-		return clipRect = rect;
+		return @:bypassAccessor clipRect = rect;
 	}
 
 	// Please don't mess with this function.
 	inline function finishCallbackFunc(anim:String = "")
 	{
-		if (!playable && active)
+		if (!playable && @:bypassAccessor active)
 		{
 			@:bypassAccessor active = false;
 			color = 0xffffffff;
@@ -123,8 +126,24 @@ class StrumNote extends FlxSprite
 		renderNotes();
 	}
 
+	override function destroy()
+	{
+		super.destroy();
+
+		for (i in 0...notes.length)
+		{
+			notes[i].destroy();
+		}
+	}
+
 	function renderNotes()
 	{
+		final oldDefaultCameras = FlxCamera._defaultCameras;
+		if (_cameras != null)
+		{
+			FlxCamera._defaultCameras = _cameras;
+		}
+
 		if (notes.length != 0)
 		{
 			for (i in 0...notes.length)
@@ -141,7 +160,7 @@ class StrumNote extends FlxSprite
 					continue;
 				}
 
-				if (_note.visible && _note.alpha != 0)
+				if (@:bypassAccessor _note.visible && _note.alpha != 0)
 					_note.draw();
 
 				if (_note.state == NoteState.IDLE)
@@ -174,7 +193,7 @@ class StrumNote extends FlxSprite
 					{
 						// Literally the sustain logic system
 
-						if (animation.curAnim.name == "confirm"
+						if (@:bypassAccessor animation.curAnim.name == "confirm"
 							&& PlayState.instance.songPosition > _note.position
 							&& PlayState.instance.songPosition < _note.position + (_note.sustainLength - 50))
 						{
@@ -197,6 +216,8 @@ class StrumNote extends FlxSprite
 				}
 			}
 		}
+
+		FlxCamera._defaultCameras = oldDefaultCameras;
 	}
 
 	inline public function spawnNote(position:Int, sustainLength:NoteState.UInt16 = 0)

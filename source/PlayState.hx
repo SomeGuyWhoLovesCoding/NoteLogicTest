@@ -9,7 +9,7 @@ class PlayState extends FlxState
 
 	public var strumlines:Array<Strumline> = [];
 	public var songSpeed:Float = 3;
-	public var songPosition:Float;
+	public var songPosition:Single = -1000;
 
 	static public var instance:PlayState;
 
@@ -102,15 +102,15 @@ class PlayState extends FlxState
 		}
 	}
 
-	var _songPos(default, null):Single;
+	var _songPos(default, null):Int;
 
 	override public function update(elapsed:Float)
 	{
 		songPosition += elapsed * 1000;
-		chartBytesData.update();
+		//chartBytesData.update();
 
-		/*if (songPosition + 700.0 > _songPos)
-			strumlines[1].members[FlxG.random.int(0, 3)].spawnNote(Std.int(_songPos += 120.0)); */
+		if (songPosition + 700 > _songPos)
+			strumlines[1].members[FlxG.random.int(0, 3)].spawnNote(Std.int(_songPos += 120));
 
 		super.update(elapsed);
 	}

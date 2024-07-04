@@ -12,13 +12,10 @@ class Strumline extends FlxBasic
 			m = members[i];
 
 			members[i] = m = new StrumNote(i, lane);
-			m.scale.x = m.scale.y = scale;
+			@:bypassAccessor m.scale.x = m.scale.y = scale;
 			m.parent = this;
 			m.index = i * lane;
 			m._reset();
-			@:bypassAccessor m.angle = noteAngles[m.noteData];
-
-			m.index = i * lane;
 		}
 
 		if (value <= keys)
@@ -153,7 +150,7 @@ class Strumline extends FlxBasic
 		for (i in 0...members.length)
 		{
 			m = members[i];
-			if (m.exists && m.visible && m.alpha != 0)
+			if (@:bypassAccessor m.exists && m.visible && m.alpha != 0)
 			{
 				if (m.active)
 					m.update(FlxG.elapsed);
