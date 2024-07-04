@@ -9,7 +9,7 @@ class PlayState extends FlxState
 
 	public var strumlines:Array<Strumline> = [];
 	public var songSpeed:Float = 3;
-	public var songPosition:Float = 0.0;
+	public var songPosition:Float;
 
 	static public var instance:PlayState;
 
@@ -34,10 +34,10 @@ class PlayState extends FlxState
 		for (strum in strumlines)
 		{
 			for (i in 0...strum.members.length)
-				strum.members[i].scrollMult = -1.0;
+				strum.members[i].scrollMult = -1;
 
 			strum.downScroll = true;
-			strum.y = FlxG.height - 160.0;
+			strum.y = FlxG.height - 160;
 		}
 
 		resetKeybinds([[0x61, 1073741904], [0x73, 1073741905], [0x77, 1073741906], [0x64, 1073741903]]);
@@ -58,7 +58,7 @@ class PlayState extends FlxState
 
 	var inputKeybinds:Array<StrumNote> = [];
 
-	public function resetKeybinds(?customBinds:Array<Array<Int>>):Void
+	public function resetKeybinds(?customBinds:Array<Array<Int>>)
 	{
 		final playerStrum = strumlines[1]; // Prevent redundant array access
 		final binds = customBinds;
@@ -81,7 +81,7 @@ class PlayState extends FlxState
 
 	var st(default, null):StrumNote;
 
-	inline function onKeyDown(keyCode:Int, keyMod:Int):Void
+	inline function onKeyDown(keyCode:Int, keyMod:Int)
 	{
 		st = inputKeybinds[keyCode % 1024] ?? Paths.idleStrumNote;
 
@@ -92,22 +92,21 @@ class PlayState extends FlxState
 		}
 	}
 
-	inline function onKeyUp(keyCode:Int, keyMod:Int):Void
+	inline function onKeyUp(keyCode:Int, keyMod:Int)
 	{
 		st = inputKeybinds[keyCode % 1024] ?? Paths.idleStrumNote;
 
 		if (st.active)
 		{
 			st.playAnim("static");
-			st.handleRelease();
 		}
 	}
 
-	var _songPos(default, null):Single = 0.0;
+	var _songPos(default, null):Single;
 
 	override public function update(elapsed:Float)
 	{
-		songPosition += elapsed * 1000.0;
+		songPosition += elapsed * 1000;
 		chartBytesData.update();
 
 		/*if (songPosition + 700.0 > _songPos)
@@ -116,7 +115,7 @@ class PlayState extends FlxState
 		super.update(elapsed);
 	}
 
-	override function draw():Void
+	override function draw()
 	{
 		super.draw();
 

@@ -1,4 +1,3 @@
-// Side note: please don't use @:bypassAccessor on angle for xml animations if you don't put animation.update(0) after it at the cost of a tiny overhead
 package zenith.objects;
 
 import flixel.math.FlxRect;
@@ -10,7 +9,7 @@ class StrumNote extends FlxSprite
 {
 	public var noteData:NoteState.UInt8;
 	public var player:NoteState.UInt8;
-	public var scrollMult:Float = 1.0;
+	public var scrollMult:Single = 1.0;
 	public var playable(default, set):Bool;
 
 	inline function set_playable(value:Bool):Bool
@@ -25,7 +24,7 @@ class StrumNote extends FlxSprite
 	public var parent:Strumline;
 	public var index:NoteState.UInt8;
 
-	public function new(data:NoteState.UInt8, plr:NoteState.UInt8)
+	public function new(data:NoteState.UInt8 = 0, plr:NoteState.UInt8 = 0)
 	{
 		super();
 
@@ -33,6 +32,7 @@ class StrumNote extends FlxSprite
 		player = plr;
 
 		_hittableNote = Paths.idleNote;
+		_hittableSustain = Paths.idleNote;
 	}
 
 	inline public function _reset()
@@ -60,19 +60,17 @@ class StrumNote extends FlxSprite
 
 		animation.play(anim, true);
 
-		offset.x = (frameWidth >> 1) - 54.0;
-		offset.y = (frameHeight >> 1) - 56.0;
-		origin.x = offset.x + 54.0;
-		origin.y = offset.y + 56.0;
+		@:bypassAccessor
+		{
+			offset.x = (frameWidth >> 1) - 54;
+			offset.y = (frameHeight >> 1) - 56;
+			origin.x = offset.x + 54;
+			origin.y = offset.y + 56;
+		}
 	}
 
 	override function set_clipRect(rect:FlxRect):FlxRect
 	{
-		if (clipRect != null)
-		{
-			clipRect.put();
-		}
-
 		return clipRect = rect;
 	}
 
@@ -86,10 +84,13 @@ class StrumNote extends FlxSprite
 
 			animation.play("static", true);
 
-			offset.x = (frameWidth >> 1) - 54;
-			offset.y = (frameHeight >> 1) - 56;
-			origin.x = offset.x + 54;
-			origin.y = offset.y + 56;
+			@:bypassAccessor
+			{
+				offset.x = (frameWidth >> 1) - 54;
+				offset.y = (frameHeight >> 1) - 56;
+				origin.x = offset.x + 54;
+				origin.y = offset.y + 56;
+			}
 		}
 	}
 
@@ -114,6 +115,7 @@ class StrumNote extends FlxSprite
 	var _notePool(default, null):Array<NoteObject> = [];
 	var _note(default, null):NoteObject;
 	var _hittableNote(default, null):NoteObject; // The target note for the hitreg
+	var _hittableSustain(default, null):NoteObject; // The target sustain note
 
 	override function draw()
 	{
@@ -132,6 +134,13 @@ class StrumNote extends FlxSprite
 				if (@:bypassAccessor !_note.exists)
 					continue;
 
+				if (PlayState.instance.songPosition - _note.position > _note.sustainLength + 300)
+				{
+					@:bypassAccessor _note.exists = false;
+					_notePool.push(_note);
+					continue;
+				}
+
 				_note.draw();
 
 				if (_note.state == NoteState.IDLE)
@@ -142,38 +151,35 @@ class StrumNote extends FlxSprite
 						{
 							if (PlayState.instance.songPosition > _note.position)
 							{
-								_note.hit(this);
+								_note.hit();
 								playAnim("confirm");
 							}
 						}
-						else
+
+						if ((_hittableNote == Paths.idleNote && _note.position - PlayState.instance.songPosition < 150)
+							|| (_hittableNote.state == NoteState.HIT || _hittableNote.position > _note.position))
+							// TODO: Implement a center target feature for the target note (basically targeting the closest note to the strumnote constantly)
 						{
-							if ((_hittableNote == Paths.idleNote && _note.position - PlayState.instance.songPosition < 175.0)
-								|| (_hittableNote.state == NoteState.HIT || _hittableNote.position > _note.position))
-								// TODO: Implement a center target feature for the target note (basically targeting the closest note to the strumnote constantly)
-							{
-								_hittableNote = _note;
-							}
+							_hittableNote = _note;
 						}
 
-						if (_hittableNote != Paths.idleNote
-							&& PlayState.instance.songPosition - (_hittableNote.position + _hittableNote.sustainLength) > 175.0 / PlayState.instance.songSpeed)
+						if (_hittableNote != Paths.idleNote && PlayState.instance.songPosition - _hittableNote.position > 200)
 						{
 							_hittableNote.state = NoteState.MISS;
 							_hittableNote = Paths.idleNote;
 						}
 					}
-					/*else
-						{
-							// TODO: Implement the sustain logic
-					}*/
-				}
+					else
+					{
+						// Literally the sustain logic system
 
-				if (PlayState.instance.songPosition - (_note.position + _note.sustainLength) > 350.0 / PlayState.instance.songSpeed)
-				{
-					@:bypassAccessor _note.exists = false;
-					_notePool.push(_note);
-					continue;
+						if (animation.curAnim.name == "confirm"
+							&& PlayState.instance.songPosition > _note.position
+							&& PlayState.instance.songPosition < _note.position + (_note.sustainLength - 50))
+						{
+							playAnim("confirm");
+						}
+					}
 				}
 
 				_note.distance = 0.45 * (PlayState.instance.songPosition - _note.position) * PlayState.instance.songSpeed;
@@ -182,11 +188,11 @@ class StrumNote extends FlxSprite
 				@:bypassAccessor
 				{
 					_note.x = x
-						+ (!_note.isSustain ? 0.0 : initial_width - Std.int(_note.width) >> 1)
-						+ ((scrollMult < 0.0 ? -scrollMult : scrollMult) * _note.distance) * FlxMath.fastCos(FlxAngle.asRadians(_note.direction - 90.0));
+						+ (!_note.isSustain ? 0 : initial_width - Std.int(_note.width) >> 1)
+						+ ((scrollMult < 0 ? -scrollMult : scrollMult) * _note.distance) * FlxMath.fastCos(FlxAngle.asRadians(_note.direction - 90));
 					_note.y = y
-						+ (!_note.isSustain ? 0.0 : initial_height >> 1)
-						+ (scrollMult * _note.distance) * FlxMath.fastSin(FlxAngle.asRadians(_note.direction - 90.0));
+						+ (!_note.isSustain ? 0 : initial_height >> 1)
+						+ (scrollMult * _note.distance) * FlxMath.fastSin(FlxAngle.asRadians(_note.direction - 90));
 				}
 			}
 		}
@@ -195,15 +201,15 @@ class StrumNote extends FlxSprite
 	inline public function spawnNote(position:Int, sustainLength:NoteState.UInt16 = 0)
 	{
 		var note:NoteObject = _notePool.pop() ?? (notes[notes.length] = new NoteObject(this));
-		note.renew(false, position, sustainLength);
+		note.renew(false, position);
 		note.angle = angle;
 		@:bypassAccessor note.exists = true;
 
-		if (note.sustainLength > 1 && !note.isSustain)
+		if (sustainLength > 20 && !note.isSustain)
 		{
 			var note:NoteObject = _notePool.pop() ?? (notes[notes.length] = new NoteObject(this));
 			note.renew(true, position, sustainLength);
-			note.angle = 0.0;
+			note.angle = 0;
 			@:bypassAccessor note.exists = true;
 		}
 	}
@@ -213,12 +219,9 @@ class StrumNote extends FlxSprite
 	{
 		if (_hittableNote != Paths.idleNote)
 		{
-			_hittableNote.hit(this);
+			_hittableNote.hit();
 			_hittableNote = Paths.idleNote;
+			playAnim("confirm");
 		}
-	}
-
-	public function handleRelease()
-	{
 	}
 }

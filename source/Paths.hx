@@ -1,29 +1,23 @@
 package;
 
-import flixel.animation.FlxAnimationController;
-import flixel.animation.FlxAnimation;
-import flixel.graphics.frames.FlxFrame;
 import flixel.graphics.frames.FlxAtlasFrames;
-import openfl.display.BitmapData;
-import openfl.media.Sound;
+import flixel.graphics.FlxGraphic;
 
 using StringTools;
 
-@:access(flixel.animation.FlxAnimationController)
 @:final
 class Paths
 {
 	inline static public var ASSET_PATH:String = "assets";
 	inline static public var SOUND_EXT:String = "ogg";
 
-	static public function image(key:String):BitmapData
+	static public function image(key:String)
 	{
 		var imagePath:String = '$ASSET_PATH/images/$key.png';
 
 		if (sys.FileSystem.exists(imagePath))
 		{
-			var bitmapData:BitmapData = FlxG.bitmap.add(imagePath).bitmap;
-			return bitmapData;
+			return FlxGraphic.fromBitmapData(openfl.display.BitmapData.fromFile(imagePath), false, key);
 		}
 
 		trace("Image file \"" + imagePath + "\" doesn't exist.");
@@ -31,26 +25,9 @@ class Paths
 		return null;
 	}
 
-	static private var soundCache:Map<String, Sound> = new Map<String, Sound>();
-
-	static public function sound(key:String):Sound
+	static public function sound(key:String)
 	{
-		var soundPath:String = '$ASSET_PATH/$key.$SOUND_EXT';
-
-		if (sys.FileSystem.exists(soundPath))
-		{
-			if (!soundCache.exists(soundPath))
-			{
-				var sound:Sound = Sound.fromFile(soundPath);
-				soundCache.set(soundPath, sound);
-			}
-
-			return soundCache.get(soundPath);
-		}
-
-		trace('Sound file "$soundPath" doesn\'t exist.');
-
-		return null;
+		return '$ASSET_PATH/$key.$SOUND_EXT';
 	}
 
 	static public function font(key:String, ext:String = "ttf"):String
@@ -58,12 +35,12 @@ class Paths
 		return '$ASSET_PATH/fonts/$key.$ext';
 	}
 
-	static public function inst(song:String):Sound
+	static public function inst(song:String)
 	{
 		return sound('data/${formatToSongPath(song)}/audio/inst');
 	}
 
-	static public function voices(song:String):Sound
+	static public function voices(song:String)
 	{
 		return sound('data/${formatToSongPath(song)}/audio/vocals');
 	}
@@ -80,12 +57,8 @@ class Paths
 
 	// Weird stuff that belongs to the end. Used for making stuff hacky while allowing you to have your custom noteskin btw
 	static public var strumNoteAnimationHolder:FlxSprite = new FlxSprite();
-	static public var noteAnimationHolder:FlxSprite = new FlxSprite();
-	static public var sustainAnimationHolder:FlxSprite = new FlxSprite();
-
 	static public var idleNote:NoteObject;
 	static public var idleStrumNote:StrumNote;
-	static public var idleStrumline:Strumline;
 
 	static public function initNoteShit()
 	{
@@ -94,17 +67,15 @@ class Paths
 		strumNoteAnimationHolder.animation.addByPrefix('pressed', 'press', 12, false);
 		strumNoteAnimationHolder.animation.addByPrefix('confirm', 'confirm', 24, false);
 
-		noteAnimationHolder.frames = getSparrowAtlas('ui/noteskins/Regular/Note');
-		noteAnimationHolder.animation.addByPrefix('preview', 'preview', 0, false);
+		if (idleNote == null)
+			idleNote = new NoteObject();
 
-		sustainAnimationHolder.frames = getSparrowAtlas('ui/noteskins/Regular/Sustain');
-		sustainAnimationHolder.animation.addByPrefix('preview', 'preview', 0, false);
+		if (idleStrumNote == null)
+			idleStrumNote = new StrumNote();
 
-		idleNote = idleNote ?? new NoteObject();
-		idleStrumNote = idleStrumNote ?? new StrumNote(0, 0);
-		idleStrumline = idleStrumline ?? new Strumline(4, 0);
+		if (idleStrumNote.parent == null)
+			idleStrumNote.parent = new Strumline();
 
-		idleStrumNote.parent = idleStrumline;
 		idleStrumNote._reset();
 
 		idleNote.active = idleStrumNote.active = idleNote.visible = idleStrumNote.visible = false;

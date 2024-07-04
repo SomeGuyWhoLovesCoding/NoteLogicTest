@@ -1,12 +1,11 @@
 package zenith.objects;
 
-@:access(zenith.Gameplay)
 @:access(zenith.objects.StrumNote)
 class Strumline extends FlxBasic
 {
-	public var keys(default, set):UInt;
+	public var keys(default, set):Int;
 
-	function set_keys(value:UInt):UInt
+	function set_keys(value:Int):Int
 	{
 		for (i in 0...value)
 		{
@@ -32,29 +31,29 @@ class Strumline extends FlxBasic
 		return keys = value;
 	}
 
-	public var lane:UInt = 0;
+	public var lane:Int = 0;
 	public var player:Bool = false;
 	public var downScroll:Bool = false;
 
-	public var x(default, set):Float;
+	public var x(default, set):Int;
 
-	function set_x(value:Float):Float
+	function set_x(value:Int):Int
 	{
 		moveX(value);
 		return x = value;
 	}
 
-	public var y(default, set):Float;
+	public var y(default, set):Int;
 
-	function set_y(value:Float):Float
+	function set_y(value:Int):Int
 	{
 		moveY(value);
 		return y = value;
 	}
 
-	public var alpha(default, set):Float;
+	public var alpha(default, set):Single;
 
-	function set_alpha(value:Float):Float
+	function set_alpha(value:Single):Single
 	{
 		if (members.length == 0)
 			return alpha;
@@ -69,9 +68,9 @@ class Strumline extends FlxBasic
 
 	public var members:Array<StrumNote> = [];
 
-	public var gap(default, set):Float;
+	public var gap(default, set):Int;
 
-	function set_gap(value:Float):Float
+	function set_gap(value:Int):Int
 	{
 		if (members.length == 0)
 			return gap;
@@ -82,9 +81,9 @@ class Strumline extends FlxBasic
 		return gap = value;
 	}
 
-	public var scale(default, set):Float;
+	public var scale(default, set):Single;
 
-	function set_scale(value:Float):Float
+	function set_scale(value:Single):Single
 	{
 		if (members.length == 0)
 			return scale;
@@ -116,37 +115,35 @@ class Strumline extends FlxBasic
 		return playable = value;
 	}
 
-	public function new(keys:UInt = 4, lane:UInt = 0, playable:Bool = false)
+	public function new(keys:Int = 4, lane:Int = 0, playable:Bool = false)
 	{
 		super();
 
 		this.lane = lane;
 		this.keys = keys;
-		gap = 112.0;
-		scale = 1.0;
+		gap = 112;
+		scale = 1;
 		this.playable = playable;
 
 		// Default strumline positions
-		x = (y = 60.0) + ((FlxG.width * 0.5587511111112) * lane);
+		x = (y = 60) + (Std.int(FlxG.width * 0.5587511111112) * lane);
 	}
 
-	public function reset():Strumline
+	public function reset()
 	{
 		keys = 4;
-		gap = 112.0;
-		scale = 1.0;
+		gap = 112;
+		scale = 1;
 
 		// Default strumline positions
-		x = (y = 60.0) + ((FlxG.width * 0.5587511111112) * lane);
-
-		return this;
+		x = (y = 60) + (Std.int(FlxG.width * 0.5587511111112) * lane);
 	}
 
 	override function update(elapsed:Float)
 	{
 	}
 
-	var m:StrumNote;
+	var m(default, null):StrumNote;
 
 	override function draw()
 	{
@@ -156,7 +153,7 @@ class Strumline extends FlxBasic
 		for (i in 0...members.length)
 		{
 			m = members[i];
-			if (m.exists && m.visible && m.alpha != 0.0)
+			if (m.exists && m.visible && m.alpha != 0)
 			{
 				if (m.active)
 					m.update(FlxG.elapsed);
@@ -165,7 +162,7 @@ class Strumline extends FlxBasic
 		}
 	}
 
-	public function moveX(x:Float)
+	public function moveX(x:Int)
 	{
 		if (members.length == 0)
 			return;
@@ -176,7 +173,7 @@ class Strumline extends FlxBasic
 		}
 	}
 
-	public function moveY(y:Float)
+	public function moveY(y:Int)
 	{
 		if (members.length == 0)
 			return;
@@ -200,16 +197,19 @@ class Strumline extends FlxBasic
 		for (i in 0...members.length)
 		{
 			m = members[i];
-			@:bypassAccessor m.width = (m.scale.x < 0.0 ? -m.scale.x : m.scale.x) * m.frameWidth;
-			@:bypassAccessor m.height = (m.scale.y < 0.0 ? -m.scale.y : m.scale.y) * m.frameHeight;
-			m.offset.x = (m.frameWidth >> 1) - 54;
-			m.offset.y = (m.frameHeight >> 1) - 56;
-			m.origin.x = m.offset.x + 54;
-			m.origin.y = m.offset.y + 56;
+			@:bypassAccessor
+			{
+				m.offset.x = (m.frameWidth >> 1) - 54;
+				m.offset.y = (m.frameHeight >> 1) - 56;
+				m.origin.x = m.offset.x + 54;
+				m.origin.y = m.offset.y + 56;
+			}
 		}
 	}
 
-	public var singAnimations:Array<String> = ["singLEFT", "singDOWN", "singUP", "singRIGHT"];
+	public var singPrefix:String = "sing";
+	public var singSuffix:String = "";
+	public var singAnimations:Array<String> = ["LEFT", "DOWN", "UP", "RIGHT"];
 	public var noteColors:Array<Int> = [0xFF9966BB, 0xFF00FFFF, 0xFF00FF00, 0xFFFF0000];
-	public var noteAngles:Array<Float> = [0.0, -90.0, 90.0, 180.0];
+	public var noteAngles:Array<Int> = [0, -90, 90, 180];
 }

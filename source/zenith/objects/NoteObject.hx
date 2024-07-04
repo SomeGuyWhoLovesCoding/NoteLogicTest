@@ -48,8 +48,8 @@ class NoteObject extends FlxSprite
 		newRect.x += (-Std.int(camera.scroll.x * scrollFactor.x) - offset.x + origin.x - _scaledOrigin.x);
 		newRect.y += (-Std.int(camera.scroll.y * scrollFactor.y) - offset.y + origin.y - _scaledOrigin.y);
 
-		newRect.width = _frame.frame.width * (scale.x < 0.0 ? -scale.x : scale.x);
-		newRect.height = _frame.frame.height * (scale.y < 0.0 ? -scale.y : scale.y);
+		newRect.width = _frame.frame.width * (scale.x < 0 ? -scale.x : scale.x);
+		newRect.height = _frame.frame.height * (scale.y < 0 ? -scale.y : scale.y);
 
 		return newRect.getRotatedBounds(angle, _scaledOrigin, newRect);
 	} // Please don't remove this
@@ -66,19 +66,17 @@ class NoteObject extends FlxSprite
 		}
 	}
 
-	inline public function renew(sustain:Bool, _position:Int, _sustainLength:NoteState.UInt16)
+	inline public function renew(sustain:Bool, _position:Int, _sustainLength:NoteState.UInt16 = 0)
 	{
 		isSustain = sustain;
 		state = NoteState.IDLE;
 
-		frames = !isSustain ? Paths.noteAnimationHolder.frames : Paths.sustainAnimationHolder.frames;
-		animation.copyFrom(!isSustain ? Paths.noteAnimationHolder.animation : Paths.sustainAnimationHolder.animation);
-		inline animation.play("preview");
+		loadGraphic(Paths.image(!isSustain ? 'ui/noteskins/Regular/Note' : 'ui/noteskins/Regular/Sustain'));
 
 		position = _position;
 		sustainLength = _sustainLength;
 
-		direction = 0.0;
+		direction = 0;
 
 		// Don't remove this. Unless you want to :trollface:
 		@:bypassAccessor y = FlxG.height;
@@ -90,39 +88,34 @@ class NoteObject extends FlxSprite
 
 	// Does this really need to be inlined?
 	// Yes.
-	inline public function hit(strum:StrumNote)
+	inline public function hit()
 	{
 		if (state != NoteState.HIT)
 		{
 			@:bypassAccessor exists = isSustain;
-			strum.playAnim("confirm");
-
-			if (!isSustain || PlayState.instance.songPosition + (frameHeight << 1) > position + sustainLength)
-			{
-				state = NoteState.HIT;
-			}
+			state = NoteState.HIT;
 		}
 	}
 
 	inline function _updateNoteFrame(strum:StrumNote)
 	{
-		_frame.frame.y = 0.0;
+		_frame.frame.y = 0;
 		_frame.frame.height = frameHeight;
 
 		if (isSustain)
 		{
 			_frame.frame.y = -sustainLength * ((PlayState.instance.songSpeed * 0.45) / strum.scale.y);
-			_frame.frame.height = (-_frame.frame.y * (strum.scrollMult < 0.0 ? -strum.scrollMult : strum.scrollMult)) + frameHeight;
+			_frame.frame.height = (-_frame.frame.y * (strum.scrollMult < 0 ? -strum.scrollMult : strum.scrollMult)) + frameHeight;
 			angle = direction;
 
-			if (strum.scrollMult < 0.0)
+			if (strum.scrollMult < 0)
 				angle += 180;
 		}
 
-		@:bypassAccessor height = _frame.frame.height * (scale.y < 0.0 ? -scale.y : scale.y);
+		@:bypassAccessor height = _frame.frame.height * (scale.y < 0 ? -scale.y : scale.y);
 
-		offset.x = offset.y = 0.0;
+		offset.x = offset.y = 0;
 		origin.x = frameWidth >> 1;
-		origin.y = isSustain ? 0.0 : frameHeight >> 1;
+		origin.y = isSustain ? 0 : frameHeight >> 1;
 	}
 }
