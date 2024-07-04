@@ -8,10 +8,10 @@ import flixel.math.FlxAngle;
 @:access(zenith.objects.NoteObject)
 class StrumNote extends FlxSprite
 {
-	public var noteData:NoteState.UInt8 = 0;
-	public var player:NoteState.UInt8 = 0;
+	public var noteData:NoteState.UInt8;
+	public var player:NoteState.UInt8;
 	public var scrollMult:Float = 1.0;
-	public var playable(default, set):Bool = false;
+	public var playable(default, set):Bool;
 
 	inline function set_playable(value:Bool):Bool
 	{
@@ -19,11 +19,11 @@ class StrumNote extends FlxSprite
 		return playable = value;
 	}
 
-	var initial_width:NoteState.UInt8 = 0;
-	var initial_height:NoteState.UInt8 = 0;
+	var initial_width:NoteState.UInt8;
+	var initial_height:NoteState.UInt8;
 
 	public var parent:Strumline;
-	public var index:NoteState.UInt8 = 0;
+	public var index:NoteState.UInt8;
 
 	public function new(data:NoteState.UInt8, plr:NoteState.UInt8)
 	{
@@ -31,9 +31,6 @@ class StrumNote extends FlxSprite
 
 		noteData = data;
 		player = plr;
-
-		notes = [];
-		_notePool = [];
 
 		_hittableNote = Paths.idleNote;
 	}
@@ -112,9 +109,9 @@ class StrumNote extends FlxSprite
 	 * It's currently unfinished but most of it is polished.
 	 */
 	// TODO: Implement the sustain logic
-	public var notes:Array<NoteObject>;
+	public var notes:Array<NoteObject> = [];
 
-	var _notePool(default, null):Array<NoteObject>;
+	var _notePool(default, null):Array<NoteObject> = [];
 	var _note(default, null):NoteObject;
 	var _hittableNote(default, null):NoteObject; // The target note for the hitreg
 

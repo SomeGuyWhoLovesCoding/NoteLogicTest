@@ -15,7 +15,7 @@ class NoteObject extends FlxSprite
 	public var distance:Single;
 	public var direction:Single;
 
-	public var state:NoteState.UInt8 = NoteState.IDLE;
+	public var state:NoteState.UInt8;
 
 	/**
 	 * Calculates the smallest globally aligned bounding box that encompasses this sprite's graphic as it
