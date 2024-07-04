@@ -10,7 +10,7 @@ class ChartBytesData
 
 	var bytesTotal(default, null):Int = 1;
 
-	public function new(songName:String):Void
+	public function new(songName:String)
 	{
 		if (sys.FileSystem.exists('assets/data/$songName.json'))
 			saveChartFromJson(songName);
@@ -20,8 +20,8 @@ class ChartBytesData
 		var song_len = input.readByte();
 		var song:String = input.readString(song_len);
 
-		var speed = input.readByte() * 0.0392156862745098;
-		var bpm = input.readFloat();
+		var speed = input.readDouble();
+		var bpm = input.readDouble();
 
 		var player1_len = input.readByte();
 		var player1:String = input.readString(player1_len);
@@ -43,29 +43,29 @@ class ChartBytesData
 
 		// All of this is commented out because it's supposed to be a test project showcasing the third note system rewrite.
 		/*
-		Gameplay.SONG = new Song(song, {
-			speed: speed,
-			bpm: bpm,
-			player1: player1,
-			player2: player2,
-			spectator: spectator,
-			stage: stage,
-			time_signature: [beats, steps],
-			needsVoices: needsVoices,
-			strumlines: strumlines
-		});
+			Gameplay.SONG = new Song(song, {
+				speed: speed,
+				bpm: bpm,
+				player1: player1,
+				player2: player2,
+				spectator: spectator,
+				stage: stage,
+				time_signature: [beats, steps],
+				needsVoices: needsVoices,
+				strumlines: strumlines
+			});
 
-		trace(Gameplay.SONG.song);
-		trace(Gameplay.SONG.info.speed);
-		trace(Gameplay.SONG.info.bpm);
-		trace(Gameplay.SONG.info.player1);
-		trace(Gameplay.SONG.info.player2);
-		trace(Gameplay.SONG.info.spectator);
-		trace(Gameplay.SONG.info.stage);
-		trace(Gameplay.SONG.info.time_signature);
-		trace(Gameplay.SONG.info.needsVoices);
-		trace(Gameplay.SONG.info.strumlines);
-		*/
+			trace(Gameplay.SONG.song);
+			trace(Gameplay.SONG.info.speed);
+			trace(Gameplay.SONG.info.bpm);
+			trace(Gameplay.SONG.info.player1);
+			trace(Gameplay.SONG.info.player2);
+			trace(Gameplay.SONG.info.spectator);
+			trace(Gameplay.SONG.info.stage);
+			trace(Gameplay.SONG.info.time_signature);
+			trace(Gameplay.SONG.info.needsVoices);
+			trace(Gameplay.SONG.info.strumlines);
+		 */
 
 		bytesTotal = sys.FileSystem.stat('assets/data/$songName.bin').size;
 
@@ -73,14 +73,14 @@ class ChartBytesData
 	}
 
 	// Chart note data (but with raw variables)
-	// This is 7 bytes in size for each note
-	// Proof: Int32 (4 bytes), UInt8 (1 byte), UInt8 (another 1 byte), and UInt8 (1 byte yet again)
+	// This is 8 bytes in size for each note
+	// Proof: Int32 (4 bytes), UInt8 (1 byte), UInt16 (2 bytes), and UInt8 (1 byte again)
 	var position(default, null):Int;
 	var noteData(default, null):NoteState.UInt8;
-	var length(default, null):NoteState.UInt8;
+	var length(default, null):NoteState.UInt16;
 	var lane(default, null):NoteState.UInt8;
 
-	public function update():Void
+	public function update()
 	{
 		if (bytesTotal == 0)
 			return;
@@ -100,15 +100,16 @@ class ChartBytesData
 		}
 	}
 
-	inline function _moveToNext():Void
+	inline function _moveToNext()
 	{
-		position = inline input.readInt32();
+		position = (inline input.readByte()) | (inline input.readByte() << 8) | (inline input.readByte() << 16) | (inline input.readByte() << 24);
+
 		noteData = inline input.readByte();
-		length = inline input.readByte();
+		length = inline input.readByte() | (inline input.readByte() << 8);
 		lane = inline input.readByte();
 	}
 
-	static public function saveChartFromJson(songName:String):Void
+	static public function saveChartFromJson(songName:String)
 	{
 		trace("Parsing json...");
 
@@ -123,10 +124,10 @@ class ChartBytesData
 		output.writeString(json.song);
 
 		// Speed
-		inline output.writeByte(Std.int(json.info.speed * 25.5));
+		inline output.writeDouble(json.info.speed);
 
 		// BPM
-		inline output.writeFloat(json.info.bpm);
+		inline output.writeDouble(json.info.bpm);
 
 		// Player 1
 		inline output.writeByte(json.info.player1.length);
@@ -161,16 +162,25 @@ class ChartBytesData
 		var nd:Array<Array<Float>> = json.noteData; // Workaround for the dynamic iteration error
 		for (note in nd)
 		{
-			inline output.writeInt32(Std.int(note[0]));
+			// Basically writeInt32
+			inline output.writeByte(Std.int(note[0]) & 0xFF);
+			inline output.writeByte((Std.int(note[0]) >> 8) & 0xFF);
+			inline output.writeByte((Std.int(note[0]) >> 16) & 0xFF);
+			inline output.writeByte(Std.int(note[0]) >>> 24);
+
 			inline output.writeByte(Std.int(note[1]));
-			inline output.writeByte(Std.int(note[2]) >> 5);
+
+			// Basically writeUInt16
+			inline output.writeByte(Std.int(note[2]) & 0xFF);
+			inline output.writeByte(Std.int(note[2]) >> 8);
+
 			inline output.writeByte(Std.int(note[3]));
 		}
 
 		output.close(); // LMAO
 	}
 
-	static public function saveJsonFromChart(songName:String):Void
+	static public function saveJsonFromChart(songName:String)
 	{
 		trace("Parsing chart...");
 
@@ -181,8 +191,8 @@ class ChartBytesData
 		var song_len = _input.readByte();
 		var song:String = _input.readString(song_len);
 
-		var speed = _input.readByte() * 0.0392156862745098;
-		var bpm = _input.readFloat();
+		var speed = _input.readDouble();
+		var bpm = _input.readDouble();
 
 		var player1_len = _input.readByte();
 		var player1:String = _input.readString(player1_len);
@@ -208,7 +218,12 @@ class ChartBytesData
 		{
 			try
 			{
-				noteData.push([_input.readInt32(), inline _input.readByte(), inline _input.readByte() << 5, inline _input.readByte()]);
+				noteData.push([
+					(inline _input.readByte()) | (inline _input.readByte() << 8) | (inline _input.readByte() << 16) | (inline _input.readByte() << 24), inline
+					_input.readByte(),
+					(inline _input.readByte()) | (inline _input.readByte() << 8), inline
+					_input.readByte()
+				]);
 			}
 			catch (e)
 			{
@@ -218,29 +233,5 @@ class ChartBytesData
 
 		File.saveContent('assets/data/$songName.json',
 			'{"song":"$song","info":{"stage":"$stage","player1":"$player1","player2":"$player2","spectator":"$spectator","speed":$speed,"bpm":$bpm,"time_signature":[$beats, $steps],"needsVoices":$needsVoices,"strumlines":$strumlines},"noteData":$noteData}');
-	}
-
-	// Inlined functions to improve performance when streaming bytes
-	// This is just the rest of ChartBytesData lol
-
-	inline function _readInt32():Int
-	{
-		var ch1 = inline input.readByte();
-		var ch2 = inline input.readByte();
-		var ch3 = inline input.readByte();
-		var ch4 = inline input.readByte();
-		#if (php || python)
-		// php will overflow integers.  Convert them back to signed 32-bit ints.
-		var n = input.bigEndian ? ch4 | (ch3 << 8) | (ch2 << 16) | (ch1 << 24) : ch1 | (ch2 << 8) | (ch3 << 16) | (ch4 << 24);
-		if (n & 0x80000000 != 0)
-			return (n | 0x80000000);
-		else
-			return n;
-		#elseif lua
-		var n = input.bigEndian ? ch4 | (ch3 << 8) | (ch2 << 16) | (ch1 << 24) : ch1 | (ch2 << 8) | (ch3 << 16) | (ch4 << 24);
-		return lua.Boot.clampInt32(n);
-		#else
-		return input.bigEndian ? ch4 | (ch3 << 8) | (ch2 << 16) | (ch1 << 24) : ch1 | (ch2 << 8) | (ch3 << 16) | (ch4 << 24);
-		#end
 	}
 }

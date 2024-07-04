@@ -8,8 +8,8 @@ import flixel.math.FlxAngle;
 @:access(zenith.objects.NoteObject)
 class StrumNote extends FlxSprite
 {
-	public var noteData:UInt = 0;
-	public var player:UInt = 0;
+	public var noteData:NoteState.UInt8 = 0;
+	public var player:NoteState.UInt8 = 0;
 	public var scrollMult:Float = 1.0;
 	public var playable(default, set):Bool = false;
 
@@ -19,14 +19,13 @@ class StrumNote extends FlxSprite
 		return playable = value;
 	}
 
-	var initial_width:Int = 0;
-	var initial_height:Int = 0;
+	var initial_width:NoteState.UInt8 = 0;
+	var initial_height:NoteState.UInt8 = 0;
 
 	public var parent:Strumline;
-	public var index:UInt = 0;
-	public var isIdle:Bool = true;
+	public var index:NoteState.UInt8 = 0;
 
-	public function new(data:UInt, plr:UInt)
+	public function new(data:NoteState.UInt8, plr:NoteState.UInt8)
 	{
 		super();
 
@@ -60,13 +59,10 @@ class StrumNote extends FlxSprite
 	inline public function playAnim(anim:String)
 	{
 		@:bypassAccessor active = anim != "static";
-		isIdle = !active;
-		color = isIdle ? 0xffffffff : parent.noteColors[noteData];
+		color = !active ? 0xffffffff : parent.noteColors[noteData];
 
 		animation.play(anim, true);
 
-		@:bypassAccessor width = (scale.x < 0.0 ? -scale.x : scale.x) * frameWidth;
-		@:bypassAccessor height = (scale.y < 0.0 ? -scale.y : scale.y) * frameHeight;
 		offset.x = (frameWidth >> 1) - 54.0;
 		offset.y = (frameHeight >> 1) - 56.0;
 		origin.x = offset.x + 54.0;
@@ -83,25 +79,39 @@ class StrumNote extends FlxSprite
 		return clipRect = rect;
 	}
 
-	function finishCallbackFunc(anim:String)
+	// Please don't mess with this function.
+	inline function finishCallbackFunc(anim:String = "")
 	{
-		if (anim != "confirm" || playable)
-			return;
+		if (!playable && active)
+		{
+			@:bypassAccessor active = false;
+			color = 0xffffffff;
 
-		animation.play("static", true);
+			animation.play("static", true);
 
-		@:bypassAccessor active = false;
-		color = 0xffffffff;
-
-		@:bypassAccessor width = (scale.x < 0.0 ? -scale.x : scale.x) * frameWidth;
-		@:bypassAccessor height = (scale.y < 0.0 ? -scale.y : scale.y) * frameHeight;
-		offset.x = (frameWidth >> 1) - 54;
-		offset.y = (frameHeight >> 1) - 56;
-		origin.x = offset.x + 54;
-		origin.y = offset.y + 56;
+			offset.x = (frameWidth >> 1) - 54;
+			offset.y = (frameHeight >> 1) - 56;
+			origin.x = offset.x + 54;
+			origin.y = offset.y + 56;
+		}
 	}
 
-	// Note system
+	/*
+	 * //! The note system.
+	 * //? Explanation: This is organized so that the note members are based on
+	 * strumnotes instead of a single array in the note system class.
+	 * Doing said method allows for the note system to be much faster
+	 * since the group is split to [number of members in the parent strumline] parts,
+	 * and you can basically skip array access when you get the hittable note which
+	 * allows for much faster inputs under the hood.
+	 * Also, the note object class is meant to be small as possible, so there are
+	 * only 6 variables in there (excluding the inherited classes).
+	 * //? Behavior
+	 * It's very simple but it was almost complicated to make.
+	 * Basically, it has a target note variable named _hittableNote, which tracks the closest note to the strumnote.
+	 * It's currently unfinished but most of it is polished.
+	 */
+	// TODO: Implement the sustain logic
 	public var notes:Array<NoteObject>;
 
 	var _notePool(default, null):Array<NoteObject>;
@@ -127,17 +137,12 @@ class StrumNote extends FlxSprite
 
 				_note.draw();
 
-				/**
-				 * For some reason, a weird bug appears which is that you can still hit the note if it has missed and even if it's outside the hitbox
-				 * So, please don't remove the second check in the if condition below this long comment. Istg (>X()
-				 */
 				if (_note.state == NoteState.IDLE)
 				{
 					if (!_note.isSustain)
 					{
 						if (!playable)
 						{
-							// This is so stupid but hey it works
 							if (PlayState.instance.songPosition > _note.position)
 							{
 								_note.hit(this);
@@ -146,30 +151,28 @@ class StrumNote extends FlxSprite
 						}
 						else
 						{
-							if (_hittableNote == Paths.idleNote
-								&& !_note.isSustain
-								&& _note.position - PlayState.instance.songPosition < 175.0
-								|| (_hittableNote.state == NoteState.HIT
-									|| _hittableNote.position > _note.position)) // Might implement a feature that consists of constantly targeting the closest note to the strumnote
+							if ((_hittableNote == Paths.idleNote && _note.position - PlayState.instance.songPosition < 175.0)
+								|| (_hittableNote.state == NoteState.HIT || _hittableNote.position > _note.position))
+								// TODO: Implement a center target feature for the target note (basically targeting the closest note to the strumnote constantly)
 							{
 								_hittableNote = _note;
 							}
 						}
 
-						if (_hittableNote != Paths.idleNote && PlayState.instance.songPosition - (_hittableNote.position + (_hittableNote.sustainLength << 5)) > 262.5 / PlayState.instance.songSpeed)
+						if (_hittableNote != Paths.idleNote
+							&& PlayState.instance.songPosition - (_hittableNote.position + _hittableNote.sustainLength) > 175.0 / PlayState.instance.songSpeed)
 						{
-							//trace("Note miss " + noteData);
 							_hittableNote.state = NoteState.MISS;
 							_hittableNote = Paths.idleNote;
 						}
 					}
-					else
-					{
-						
-					}
+					/*else
+						{
+							// TODO: Implement the sustain logic
+					}*/
 				}
 
-				if (PlayState.instance.songPosition - (_note.position + (_note.sustainLength << 5)) > 350.0 / PlayState.instance.songSpeed)
+				if (PlayState.instance.songPosition - (_note.position + _note.sustainLength) > 350.0 / PlayState.instance.songSpeed)
 				{
 					@:bypassAccessor _note.exists = false;
 					_notePool.push(_note);
@@ -192,14 +195,14 @@ class StrumNote extends FlxSprite
 		}
 	}
 
-	inline public function spawnNote(position:Int, sustainLength:NoteState.UInt8 = 0)
+	inline public function spawnNote(position:Int, sustainLength:NoteState.UInt16 = 0)
 	{
 		var note:NoteObject = _notePool.pop() ?? (notes[notes.length] = new NoteObject(this));
 		note.renew(false, position, sustainLength);
 		note.angle = angle;
 		@:bypassAccessor note.exists = true;
 
-		if (note.sustainLength > 2 && !note.isSustain)
+		if (note.sustainLength > 1 && !note.isSustain)
 		{
 			var note:NoteObject = _notePool.pop() ?? (notes[notes.length] = new NoteObject(this));
 			note.renew(true, position, sustainLength);
@@ -218,5 +221,7 @@ class StrumNote extends FlxSprite
 		}
 	}
 
-	public function handleRelease() {}
+	public function handleRelease()
+	{
+	}
 }

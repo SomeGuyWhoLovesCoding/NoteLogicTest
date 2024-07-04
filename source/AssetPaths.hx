@@ -32,4 +32,6 @@ package;
  * @see [Flixel 5.0.0 Migration guide - AssetPaths has less caveats](https://github.com/HaxeFlixel/flixel/wiki/Flixel-5.0.0-Migration-guide#assetpaths-has-less-caveats-2575)
 **/
 @:build(flixel.system.FlxAssets.buildFileReferences("assets", true))
-class AssetPaths {}
+class AssetPaths
+{
+}

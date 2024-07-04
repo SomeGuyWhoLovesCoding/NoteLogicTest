@@ -142,7 +142,9 @@ class Strumline extends FlxBasic
 		return this;
 	}
 
-	override function update(elapsed:Float) {}
+	override function update(elapsed:Float)
+	{
+	}
 
 	var m:StrumNote;
 

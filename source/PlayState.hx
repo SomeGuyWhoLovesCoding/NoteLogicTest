@@ -8,7 +8,7 @@ class PlayState extends FlxState
 	private var chartBytesData:ChartBytesData;
 
 	public var strumlines:Array<Strumline> = [];
-	public var songSpeed:Float = 1;
+	public var songSpeed:Float = 3;
 	public var songPosition:Float = 0.0;
 
 	static public var instance:PlayState;
@@ -23,7 +23,7 @@ class PlayState extends FlxState
 
 		chartBytesData = new ChartBytesData('normal');
 
-		//FlxG.cameras.bgColor = 0xFF999999;
+		// FlxG.cameras.bgColor = 0xFF999999;
 		FlxG.camera.bgColor.alpha = 0;
 
 		for (player in 0...2)
@@ -31,13 +31,14 @@ class PlayState extends FlxState
 
 		// Pretend that this is Utils.strumlineChangeDownScroll but extracted
 
-		var playerStrum = strumlines[1];
+		for (strum in strumlines)
+		{
+			for (i in 0...strum.members.length)
+				strum.members[i].scrollMult = -1.0;
 
-		for (i in 0...playerStrum.members.length)
-			playerStrum.members[i].scrollMult = -1.0;
-
-		playerStrum.downScroll = true;
-		playerStrum.y = FlxG.height - 160.0;
+			strum.downScroll = true;
+			strum.y = FlxG.height - 160.0;
+		}
 
 		resetKeybinds([[0x61, 1073741904], [0x73, 1073741905], [0x77, 1073741906], [0x64, 1073741903]]);
 
@@ -84,7 +85,7 @@ class PlayState extends FlxState
 	{
 		st = inputKeybinds[keyCode % 1024] ?? Paths.idleStrumNote;
 
-		if (st.isIdle)
+		if (!st.active)
 		{
 			st.playAnim("pressed");
 			st.handlePress();
@@ -95,7 +96,7 @@ class PlayState extends FlxState
 	{
 		st = inputKeybinds[keyCode % 1024] ?? Paths.idleStrumNote;
 
-		if (!st.isIdle)
+		if (st.active)
 		{
 			st.playAnim("static");
 			st.handleRelease();
@@ -110,7 +111,7 @@ class PlayState extends FlxState
 		chartBytesData.update();
 
 		/*if (songPosition + 700.0 > _songPos)
-			strumlines[1].members[FlxG.random.int(0, 3)].spawnNote(Std.int(_songPos += 120.0));*/
+			strumlines[1].members[FlxG.random.int(0, 3)].spawnNote(Std.int(_songPos += 120.0)); */
 
 		super.update(elapsed);
 	}

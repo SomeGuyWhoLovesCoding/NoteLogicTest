@@ -7,12 +7,12 @@ class NoteObject extends FlxSprite
 {
 	// The data that is set from the chart for every time a note spawns
 	public var position:Int;
-	public var sustainLength:NoteState.UInt8;
+	public var sustainLength:NoteState.UInt16;
 
 	// For the sustain note
 	public var isSustain:Bool;
 
-	public var distance:Single = 20.0;
+	public var distance:Single;
 	public var direction:Single;
 
 	public var state:NoteState.UInt8 = NoteState.IDLE;
@@ -60,15 +60,13 @@ class NoteObject extends FlxSprite
 
 		@:bypassAccessor active = moves = false;
 
-		if (strum == null)
+		if (strum != null)
 		{
-			return;
+			color = strum.parent.noteColors[strum.noteData];
 		}
-
-		color = strum.parent.noteColors[strum.noteData];
 	}
 
-	inline public function renew(sustain:Bool, _position:Int, _sustainLength:NoteState.UInt8)
+	inline public function renew(sustain:Bool, _position:Int, _sustainLength:NoteState.UInt16)
 	{
 		isSustain = sustain;
 		state = NoteState.IDLE;
@@ -86,7 +84,9 @@ class NoteObject extends FlxSprite
 		@:bypassAccessor y = FlxG.height;
 	}
 
-	override function update(elapsed:Float) {}
+	override function update(elapsed:Float)
+	{
+	}
 
 	// Does this really need to be inlined?
 	// Yes.
@@ -111,7 +111,7 @@ class NoteObject extends FlxSprite
 
 		if (isSustain)
 		{
-			_frame.frame.y = -(sustainLength << 5) * ((PlayState.instance.songSpeed * 0.45) / strum.scale.y);
+			_frame.frame.y = -sustainLength * ((PlayState.instance.songSpeed * 0.45) / strum.scale.y);
 			_frame.frame.height = (-_frame.frame.y * (strum.scrollMult < 0.0 ? -strum.scrollMult : strum.scrollMult)) + frameHeight;
 			angle = direction;
 
