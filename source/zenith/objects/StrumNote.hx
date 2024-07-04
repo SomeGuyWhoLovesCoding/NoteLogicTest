@@ -141,7 +141,8 @@ class StrumNote extends FlxSprite
 					continue;
 				}
 
-				_note.draw();
+				if (_note.visible && _note.alpha != 0)
+					_note.draw();
 
 				if (_note.state == NoteState.IDLE)
 				{
