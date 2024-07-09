@@ -97,7 +97,7 @@ class NoteObject extends FlxSprite
 		}
 	}
 
-	inline function _updateNoteFrame(strum:StrumNote)
+	inline private function _updateNoteFrame(strum:StrumNote)
 	{
 		@:bypassAccessor
 		{
