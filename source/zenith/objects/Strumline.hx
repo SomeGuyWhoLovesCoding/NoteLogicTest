@@ -3,16 +3,14 @@ package zenith.objects;
 @:access(zenith.objects.StrumNote)
 class Strumline extends FlxBasic
 {
-	public var keys(default, set):Int;
+	public var keys(default, set):NoteState.UInt8;
 
-	function set_keys(value:Int):Int
+	private function set_keys(value:NoteState.UInt8):NoteState.UInt8
 	{
 		for (i in 0...value)
 		{
-			m = members[i];
-
-			members[i] = m = new StrumNote(i, lane);
-			@:bypassAccessor m.scale.x = m.scale.y = scale;
+			m = members[i] = new StrumNote(i, lane);
+			m.scale.x = m.scale.y = scale;
 			m.parent = this;
 			m.index = i * lane;
 			m._reset();
@@ -25,24 +23,25 @@ class Strumline extends FlxBasic
 
 		moveX(x);
 		moveY(y);
+
 		return keys = value;
 	}
 
-	public var lane:Int = 0;
-	public var player:Bool = false;
-	public var downScroll:Bool = false;
+	public var lane:NoteState.UInt8;
+	public var player:Bool;
+	public var downScroll:Bool;
 
-	public var x(default, set):Int;
+	public var x(default, set):NoteState.UInt16;
 
-	function set_x(value:Int):Int
+	private function set_x(value:NoteState.UInt16):NoteState.UInt16
 	{
 		moveX(value);
 		return x = value;
 	}
+	
+	public var y(default, set):NoteState.UInt16;
 
-	public var y(default, set):Int;
-
-	function set_y(value:Int):Int
+	private function set_y(value:NoteState.UInt16):NoteState.UInt16
 	{
 		moveY(value);
 		return y = value;
@@ -50,7 +49,7 @@ class Strumline extends FlxBasic
 
 	public var alpha(default, set):Single;
 
-	function set_alpha(value:Single):Single
+	private function set_alpha(value:Single):Single
 	{
 		if (members.length == 0)
 			return alpha;
@@ -65,9 +64,9 @@ class Strumline extends FlxBasic
 
 	public var members:Array<StrumNote> = [];
 
-	public var gap(default, set):Int;
+	public var gap(default, set):NoteState.UInt8;
 
-	function set_gap(value:Int):Int
+	private function set_gap(value:NoteState.UInt8):NoteState.UInt8
 	{
 		if (members.length == 0)
 			return gap;
@@ -80,7 +79,7 @@ class Strumline extends FlxBasic
 
 	public var scale(default, set):Single;
 
-	function set_scale(value:Single):Single
+	private function set_scale(value:Single):Single
 	{
 		if (members.length == 0)
 			return scale;
@@ -99,7 +98,7 @@ class Strumline extends FlxBasic
 
 	public var playable(default, set):Bool;
 
-	function set_playable(value:Bool):Bool
+	private function set_playable(value:Bool):Bool
 	{
 		if (members.length == 0)
 			return playable;
@@ -112,7 +111,7 @@ class Strumline extends FlxBasic
 		return playable = value;
 	}
 
-	public function new(keys:Int = 4, lane:Int = 0, playable:Bool = false)
+	public function new(keys:NoteState.UInt8 = 4, lane:NoteState.UInt8 = 0, playable:Bool = false)
 	{
 		super();
 
@@ -126,7 +125,7 @@ class Strumline extends FlxBasic
 		x = (y = 60) + (Std.int(FlxG.width * 0.5587511111112) * lane);
 	}
 
-	public function reset()
+	inline public function reset()
 	{
 		keys = 4;
 		gap = 112;
@@ -140,7 +139,7 @@ class Strumline extends FlxBasic
 	{
 	}
 
-	var m(default, null):StrumNote;
+	private var m(default, null):StrumNote;
 
 	override function draw()
 	{
@@ -159,7 +158,7 @@ class Strumline extends FlxBasic
 		}
 	}
 
-	public function moveX(x:Int)
+	public function moveX(x:NoteState.UInt16)
 	{
 		if (members.length == 0)
 			return;
@@ -170,7 +169,7 @@ class Strumline extends FlxBasic
 		}
 	}
 
-	public function moveY(y:Int)
+	public function moveY(y:NoteState.UInt16)
 	{
 		if (members.length == 0)
 			return;
