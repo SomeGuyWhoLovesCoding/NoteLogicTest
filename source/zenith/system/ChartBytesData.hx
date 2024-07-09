@@ -72,13 +72,9 @@ class ChartBytesData
 		_moveToNext();
 	}
 
-	// Chart note data (but with raw variables)
-	// This is 8 bytes in size for each note
+	// This chart note data is 8 bytes in size for each note
 	// Proof: Int32 (4 bytes), UInt8 (1 byte), UInt16 (2 bytes), and UInt8 (1 byte again)
 	var position(default, null):Int;
-	var noteData(default, null):NoteState.UInt8;
-	var length(default, null):NoteState.UInt16;
-	var lane(default, null):NoteState.UInt8;
 
 	public function update()
 	{
@@ -87,7 +83,7 @@ class ChartBytesData
 
 		while (PlayState.instance.songPosition > position - (1880.0 / PlayState.instance.songSpeed))
 		{
-			PlayState.instance.strumlines[lane].members[noteData].spawnNote(position, length);
+			PlayState.instance.strumlines[inline input.readByte()].members[inline input.readByte()].spawnNote(position, inline input.readByte() | (inline input.readByte() << 8));
 
 			if (input.tell() == bytesTotal)
 			{
@@ -100,13 +96,10 @@ class ChartBytesData
 		}
 	}
 
+	// Internal helper function
 	inline function _moveToNext()
 	{
 		position = (inline input.readByte()) | (inline input.readByte() << 8) | (inline input.readByte() << 16) | (inline input.readByte() << 24);
-
-		noteData = inline input.readByte();
-		length = inline input.readByte() | (inline input.readByte() << 8);
-		lane = inline input.readByte();
 	}
 
 	static public function saveChartFromJson(songName:String)
@@ -162,19 +155,18 @@ class ChartBytesData
 		var nd:Array<Array<Float>> = json.noteData; // Workaround for the dynamic iteration error
 		for (note in nd)
 		{
-			// Basically writeInt32
-			inline output.writeByte(Std.int(note[0]) & 0xFF);
-			inline output.writeByte((Std.int(note[0]) >> 8) & 0xFF);
-			inline output.writeByte((Std.int(note[0]) >> 16) & 0xFF);
-			inline output.writeByte(Std.int(note[0]) >>> 24);
-
+			inline output.writeByte(Std.int(note[3]));
 			inline output.writeByte(Std.int(note[1]));
 
 			// Basically writeUInt16
 			inline output.writeByte(Std.int(note[2]) & 0xFF);
 			inline output.writeByte(Std.int(note[2]) >> 8);
 
-			inline output.writeByte(Std.int(note[3]));
+			// Basically writeInt32
+			inline output.writeByte(Std.int(note[0]) & 0xFF);
+			inline output.writeByte((Std.int(note[0]) >> 8) & 0xFF);
+			inline output.writeByte((Std.int(note[0]) >> 16) & 0xFF);
+			inline output.writeByte(Std.int(note[0]) >>> 24);
 		}
 
 		output.close(); // LMAO
@@ -213,17 +205,20 @@ class ChartBytesData
 		var strumlines = _input.readByte();
 
 		var noteData:Array<Array<Float>> = [];
+		var _lane:NoteState.UInt8 = 0;
+		var _noteData:NoteState.UInt8 = 0;
+		var _susLen:NoteState.UInt16 = 0;
+		var _position:Int = 0;
 
 		while (true)
 		{
 			try
 			{
-				noteData.push([
-					(inline _input.readByte()) | (inline _input.readByte() << 8) | (inline _input.readByte() << 16) | (inline _input.readByte() << 24), inline
-					_input.readByte(),
-					(inline _input.readByte()) | (inline _input.readByte() << 8), inline
-					_input.readByte()
-				]);
+				_lane = inline _input.readByte();
+				_noteData = inline _input.readByte();
+				_susLen = (inline _input.readByte()) | (inline _input.readByte() << 8);
+				_position = (inline _input.readByte()) | (inline _input.readByte() << 8) | (inline _input.readByte() << 16) | (inline _input.readByte() << 24);
+				noteData.push([_position, _noteData, _susLen, _lane]);
 			}
 			catch (e)
 			{
