@@ -245,6 +245,7 @@ class StrumNote extends FlxSprite
 						if (PlayState.instance.songPosition > _note.position)
 						{
 							_note.hit();
+							_notePool.push(_note);
 							playAnim("confirm");
 						}
 					}
@@ -318,6 +319,7 @@ class StrumNote extends FlxSprite
 		if (_hittableNote != Paths.idleNote)
 		{
 			_hittableNote.hit();
+			_notePool.push(_hittableNote);
 			_hittableNote = Paths.idleNote;
 			playAnim("confirm");
 		}
@@ -329,7 +331,7 @@ class StrumNote extends FlxSprite
 
 		if (_holding)
 		{
-			trace('Sustain miss $noteData');
+			//trace('Sustain miss $noteData');
 			_holding = false;
 		}
 	}
