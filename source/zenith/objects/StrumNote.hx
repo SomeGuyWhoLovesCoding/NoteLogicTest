@@ -56,7 +56,7 @@ class StrumNote extends FlxSprite
 			animation.update(elapsed);
 	}
 
-	public function playAnim(anim:String)
+	inline public function playAnim(anim:String)
 	{
 		@:bypassAccessor active = anim != "static";
 		color = !active ? 0xffffffff : parent.noteColors[noteData];
@@ -78,7 +78,7 @@ class StrumNote extends FlxSprite
 	}
 
 	// Please don't mess with this function.
-	function finishCallbackFunc(anim:String = "")
+	inline function finishCallbackFunc(anim:String = "")
 	{
 		if (!playable && @:bypassAccessor active)
 		{
@@ -291,8 +291,9 @@ class StrumNote extends FlxSprite
 		}
 	}
 
-	// Only 2 lines of code for the hitreg behaviour (not including the if condition)
-	public function handlePress()
+	// The rest of the input stuff
+
+	inline public function handlePress()
 	{
 		playAnim("pressed");
 		if (_hittableNote != Paths.idleNote)
@@ -303,7 +304,7 @@ class StrumNote extends FlxSprite
 		}
 	}
 
-	public function handleRelease()
+	inline public function handleRelease()
 	{
 		playAnim("static");
 
