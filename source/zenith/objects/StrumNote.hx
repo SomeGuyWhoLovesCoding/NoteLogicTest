@@ -13,7 +13,7 @@ class StrumNote extends FlxSprite
 	public var scrollMult:Float;
 	public var playable(default, set):Bool;
 
-	inline function set_playable(value:Bool):Bool
+	inline private function set_playable(value:Bool):Bool
 	{
 		animation.finishCallback = value ? null : finishCallbackFunc;
 		return playable = value;
@@ -80,7 +80,7 @@ class StrumNote extends FlxSprite
 	}
 
 	// Please don't mess with this function.
-	inline function finishCallbackFunc(anim:String = "")
+	inline private function finishCallbackFunc(anim:String = "")
 	{
 		if (!playable && @:bypassAccessor active)
 		{
@@ -117,10 +117,10 @@ class StrumNote extends FlxSprite
 	public var notes:Array<NoteObject> = [];
 	public var sustains:Array<NoteObject> = [];
 
-	var _notePool(default, null):Array<NoteObject> = [];
-	var _susPool(default, null):Array<NoteObject> = [];
-	var _note(default, null):NoteObject;
-	var _hittableNote(default, null):NoteObject; // The target note for the hitreg
+	private var _notePool(default, null):Array<NoteObject> = [];
+	private var _susPool(default, null):Array<NoteObject> = [];
+	private var _note(default, null):NoteObject;
+	private var _hittableNote(default, null):NoteObject; // The target note for the hitreg
 
 	override function draw()
 	{
@@ -152,7 +152,7 @@ class StrumNote extends FlxSprite
 		}
 	}
 
-	function renderSustains()
+	private function renderSustains()
 	{
 		if (sustains.length != 0)
 		{
@@ -203,7 +203,7 @@ class StrumNote extends FlxSprite
 		}
 	}
 
-	function renderNotes()
+	private function renderNotes()
 	{
 		if (notes.length != 0)
 		{
@@ -265,7 +265,7 @@ class StrumNote extends FlxSprite
 		}
 	}
 
-	inline public function spawnNote(position:Int, sustainLength:NoteState.UInt16)
+	inline private function spawnNote(position:Int, sustainLength:NoteState.UInt16)
 	{
 		var note:NoteObject = _notePool.pop();
 
