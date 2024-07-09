@@ -4,6 +4,8 @@ import sys.io.FileInput;
 import sys.io.FileOutput;
 import sys.io.File;
 
+@:access(zenith.objects.StrumNote)
+
 class ChartBytesData
 {
 	public var input:FileInput;

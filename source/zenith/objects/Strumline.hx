@@ -122,7 +122,7 @@ class Strumline extends FlxBasic
 		this.playable = playable;
 
 		// Default strumline positions
-		x = (y = 60) + (Std.int(FlxG.width * 0.5587511111112) * lane);
+		x = (y = 60) + (Std.int(FlxG.width * (0.5587511111112 * lane)));
 	}
 
 	inline public function reset()
@@ -132,7 +132,7 @@ class Strumline extends FlxBasic
 		scale = 1;
 
 		// Default strumline positions
-		x = (y = 60) + (Std.int(FlxG.width * 0.5587511111112) * lane);
+		x = (y = 60) + (Std.int(FlxG.width * 0.5587511111112 * lane));
 	}
 
 	override function update(elapsed:Float)

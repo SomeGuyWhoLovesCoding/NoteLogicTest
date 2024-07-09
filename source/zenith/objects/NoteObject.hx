@@ -101,9 +101,6 @@ class NoteObject extends FlxSprite
 	{
 		@:bypassAccessor
 		{
-			_frame.frame.y = 0;
-			_frame.frame.height = frameHeight;
-
 			if (isSustain)
 			{
 				_frame.frame.y = -sustainLength * ((PlayState.instance.songSpeed * 0.45) / strum.scale.y);

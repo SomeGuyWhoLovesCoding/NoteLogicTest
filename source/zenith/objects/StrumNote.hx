@@ -161,17 +161,24 @@ class StrumNote extends FlxSprite
 				_note = sustains[i];
 
 				if (@:bypassAccessor !_note.exists)
+				{
+					if (!_susPool.contains(_note))
+					{
+						_susPool.push(_note);
+					}
+
 					continue;
+				}
 
 				if (PlayState.instance.songPosition - _note.position > _note.sustainLength + (500 / PlayState.instance.songSpeed))
 				{
 					@:bypassAccessor _note.exists = false;
-					_susPool.push(_note);
-					continue;
 				}
 
 				if (@:bypassAccessor _note.visible && _note.alpha != 0)
+				{
 					_note.draw();
+				}
 
 				if (_note.state == NoteState.IDLE)
 				{
@@ -212,17 +219,24 @@ class StrumNote extends FlxSprite
 				_note = notes[i];
 
 				if (@:bypassAccessor !_note.exists)
+				{
+					if (!_notePool.contains(_note))
+					{
+						_notePool.push(_note);
+					}
+
 					continue;
+				}
 
 				if (PlayState.instance.songPosition - _note.position > _note.sustainLength + (500 / PlayState.instance.songSpeed))
 				{
 					@:bypassAccessor _note.exists = false;
-					_notePool.push(_note);
-					continue;
 				}
 
 				if (@:bypassAccessor _note.visible && _note.alpha != 0)
+				{
 					_note.draw();
+				}
 
 				if (_note.state == NoteState.IDLE)
 				{
