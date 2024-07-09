@@ -10,7 +10,7 @@ class StrumNote extends FlxSprite
 {
 	public var noteData:NoteState.UInt8;
 	public var player:NoteState.UInt8;
-	public var scrollMult:Single = 1.0;
+	public var scrollMult:Float;
 	public var playable(default, set):Bool;
 
 	inline function set_playable(value:Bool):Bool
@@ -32,6 +32,8 @@ class StrumNote extends FlxSprite
 
 		noteData = data;
 		player = plr;
+
+		scrollMult = 1.0;
 
 		_hittableNote = Paths.idleNote;
 
@@ -277,7 +279,7 @@ class StrumNote extends FlxSprite
 		note.angle = angle;
 		@:bypassAccessor note.exists = true;
 
-		if (sustainLength > 20 && !note.isSustain)
+		if (sustainLength > 20)
 		{
 			var sustain:NoteObject = _susPool.pop();
 
@@ -298,6 +300,7 @@ class StrumNote extends FlxSprite
 	inline public function handlePress()
 	{
 		playAnim("pressed");
+
 		if (_hittableNote != Paths.idleNote)
 		{
 			_hittableNote.hit();
