@@ -19,12 +19,14 @@ class StrumNote extends FlxSprite
 		return playable = value;
 	}
 
-	var initial_width:NoteState.UInt8;
-	var initial_height:NoteState.UInt8;
-	var _holding:Bool;
+	private var initial_width:NoteState.UInt8;
+	private var initial_height:NoteState.UInt8;
+	private var _holding:Bool;
 
 	public var parent:Strumline;
 	public var index:NoteState.UInt8;
+
+	private var _idleNote:NoteObject; // For faster access to the NoteskinHandler.idleNote variable
 
 	public function new(data:NoteState.UInt8 = 0, plr:NoteState.UInt8 = 0)
 	{
@@ -35,7 +37,7 @@ class StrumNote extends FlxSprite
 
 		scrollMult = 1.0;
 
-		_hittableNote = Paths.idleNote;
+		_idleNote = _hittableNote = NoteskinHandler.idleNote;
 
 		@:bypassAccessor moves = false;
 	}
@@ -43,8 +45,8 @@ class StrumNote extends FlxSprite
 	inline public function _reset()
 	{
 		@:bypassAccessor angle = parent.noteAngles[noteData];
-		frames = Paths.strumNoteAnimationHolder.frames;
-		animation.copyFrom(Paths.strumNoteAnimationHolder.animation);
+		frames = NoteskinHandler.strumNoteAnimationHolder.frames;
+		animation.copyFrom(NoteskinHandler.strumNoteAnimationHolder.animation);
 		playAnim("static");
 
 		// Note: frameWidth and frameHeight only works for this lmao
@@ -54,8 +56,7 @@ class StrumNote extends FlxSprite
 
 	override function update(elapsed:Float)
 	{
-		if (@:bypassAccessor active)
-			animation.update(elapsed);
+		animation.update(elapsed);
 	}
 
 	inline public function playAnim(anim:String)
@@ -125,13 +126,19 @@ class StrumNote extends FlxSprite
 	override function draw()
 	{
 		final oldDefaultCameras = FlxCamera._defaultCameras;
+
 		if (_cameras != null)
 		{
 			FlxCamera._defaultCameras = _cameras;
 		}
 
 		renderSustains();
-		super.draw();
+
+		if (visible)
+		{
+			super.draw();
+		}
+
 		renderNotes();
 
 		FlxCamera._defaultCameras = oldDefaultCameras;
@@ -154,157 +161,169 @@ class StrumNote extends FlxSprite
 
 	private function renderSustains()
 	{
-		if (sustains.length != 0)
+		if (sustains.length == 0)
 		{
-			for (i in 0...sustains.length)
+			return;
+		}
+
+		for (i in 0...sustains.length)
+		{
+			_note = sustains[i];
+
+			if (@:bypassAccessor !_note.exists)
 			{
-				_note = sustains[i];
-
-				if (@:bypassAccessor !_note.exists)
+				if (!_note.isInPool)
 				{
-					if (!_susPool.contains(_note))
-					{
-						_susPool.push(_note);
-					}
-
-					continue;
+					_note.isInPool = true;
+					_susPool.push(_note);
 				}
 
-				if (PlayState.instance.songPosition - _note.position > _note.sustainLength + (500 / PlayState.instance.songSpeed))
+				continue;
+			}
+
+			if (PlayState.instance.songPosition - _note.position > _note.length + (500 / PlayState.instance.songSpeed))
+			{
+				@:bypassAccessor _note.exists = false;
+			}
+
+			if (@:bypassAccessor _note.visible && _note.alpha != 0)
+			{
+				_note.draw();
+			}
+
+			if (_note.state == NoteState.IDLE)
+			{
+				// Literally the sustain logic system
+
+				_holding = @:bypassAccessor animation.curAnim.name == "confirm"
+					&& PlayState.instance.songPosition > _note.position
+					&& PlayState.instance.songPosition < _note.position + (_note.length - 50);
+
+				if (_holding)
 				{
-					@:bypassAccessor _note.exists = false;
+					playAnim("confirm");
 				}
+			}
 
-				if (@:bypassAccessor _note.visible && _note.alpha != 0)
-				{
-					_note.draw();
-				}
+			_note.distance = 0.45 * (PlayState.instance.songPosition - _note.position) * PlayState.instance.songSpeed;
+			_note._updateNoteFrame(this);
 
-				if (_note.state == NoteState.IDLE)
-				{
-					// Literally the sustain logic system
-
-					_holding = @:bypassAccessor animation.curAnim.name == "confirm"
-						&& PlayState.instance.songPosition > _note.position
-						&& PlayState.instance.songPosition < _note.position + (_note.sustainLength - 50);
-
-					if (_holding)
-					{
-						playAnim("confirm");
-					}
-				}
-
-				_note.distance = 0.45 * (PlayState.instance.songPosition - _note.position) * PlayState.instance.songSpeed;
-				_note._updateNoteFrame(this);
-
-				@:bypassAccessor
-				{
-					_note.x = x
-						+ (!_note.isSustain ? 0 : initial_width - Std.int(_note.width) >> 1)
-						+ ((scrollMult < 0 ? -scrollMult : scrollMult) * _note.distance) * FlxMath.fastCos(FlxAngle.asRadians(_note.direction - 90));
-					_note.y = y
-						+ (!_note.isSustain ? 0 : initial_height >> 1)
-						+ (scrollMult * _note.distance) * FlxMath.fastSin(FlxAngle.asRadians(_note.direction - 90));
-				}
+			@:bypassAccessor
+			{
+				_note.x = x
+					+ (!_note.isSustain ? 0 : initial_width - Std.int(_note.width) >> 1)
+					+ ((scrollMult < 0 ? -scrollMult : scrollMult) * _note.distance) * FlxMath.fastCos(FlxAngle.asRadians(_note.direction - 90));
+				_note.y = y
+					+ (!_note.isSustain ? 0 : initial_height >> 1)
+					+ (scrollMult * _note.distance) * FlxMath.fastSin(FlxAngle.asRadians(_note.direction - 90));
 			}
 		}
 	}
 
 	private function renderNotes()
 	{
-		if (notes.length != 0)
+		if (notes.length == 0)
 		{
-			for (i in 0...notes.length)
+			return;
+		}
+
+		for (i in 0...notes.length)
+		{
+			_note = notes[i];
+
+			if (@:bypassAccessor !_note.exists)
 			{
-				_note = notes[i];
-
-				if (@:bypassAccessor !_note.exists)
+				if (!_note.isInPool)
 				{
-					if (!_notePool.contains(_note))
+					_note.isInPool = true;
+					_notePool.push(_note);
+				}
+
+				continue;
+			}
+
+			if (PlayState.instance.songPosition - _note.position > _note.length + (500 / PlayState.instance.songSpeed))
+			{
+				@:bypassAccessor _note.exists = false;
+			}
+
+			if (@:bypassAccessor _note.visible && _note.alpha != 0)
+			{
+				_note.draw();
+			}
+
+			if (_note.state == NoteState.IDLE)
+			{
+				if (!playable)
+				{
+					if (PlayState.instance.songPosition > _note.position)
 					{
+						_note.hit();
+						_note.isInPool = true;
 						_notePool.push(_note);
-					}
-
-					continue;
-				}
-
-				if (PlayState.instance.songPosition - _note.position > _note.sustainLength + (500 / PlayState.instance.songSpeed))
-				{
-					@:bypassAccessor _note.exists = false;
-				}
-
-				if (@:bypassAccessor _note.visible && _note.alpha != 0)
-				{
-					_note.draw();
-				}
-
-				if (_note.state == NoteState.IDLE)
-				{
-					if (!playable)
-					{
-						if (PlayState.instance.songPosition > _note.position)
-						{
-							_note.hit();
-							_notePool.push(_note);
-							playAnim("confirm");
-						}
-					}
-
-					if ((_hittableNote == Paths.idleNote && _note.position - PlayState.instance.songPosition < (250 / PlayState.instance.songSpeed))
-						|| (_hittableNote.state == NoteState.HIT || _hittableNote.position > _note.position))
-						// TODO: Implement a center target feature for the target note (basically targeting the closest note to the strumnote constantly)
-					{
-						_hittableNote = _note;
-					}
-
-					if (_hittableNote != Paths.idleNote && PlayState.instance.songPosition - _hittableNote.position > (250 / PlayState.instance.songSpeed))
-					{
-						_hittableNote.state = NoteState.MISS;
-						_hittableNote = Paths.idleNote;
+						playAnim("confirm");
 					}
 				}
 
-				_note.distance = 0.45 * (PlayState.instance.songPosition - _note.position) * PlayState.instance.songSpeed;
-				_note._updateNoteFrame(this);
-
-				@:bypassAccessor
+				if ((_hittableNote == _idleNote && _note.position - PlayState.instance.songPosition < (250 / PlayState.instance.songSpeed))
+					|| (_hittableNote.state == NoteState.HIT || _hittableNote.position > _note.position))
+					// TODO: Implement a center target feature for the target note (basically targeting the closest note to the strumnote constantly)
 				{
-					_note.x = x
-						+ (!_note.isSustain ? 0 : initial_width - Std.int(_note.width) >> 1)
-						+ ((scrollMult < 0 ? -scrollMult : scrollMult) * _note.distance) * FlxMath.fastCos(FlxAngle.asRadians(_note.direction - 90));
-					_note.y = y
-						+ (!_note.isSustain ? 0 : initial_height >> 1)
-						+ (scrollMult * _note.distance) * FlxMath.fastSin(FlxAngle.asRadians(_note.direction - 90));
+					_hittableNote = _note;
 				}
+
+				if (_hittableNote != _idleNote && PlayState.instance.songPosition - _hittableNote.position > (250 / PlayState.instance.songSpeed))
+				{
+					_hittableNote.state = NoteState.MISS;
+					_hittableNote = _idleNote;
+				}
+			}
+
+			_note.distance = 0.45 * (PlayState.instance.songPosition - _note.position) * PlayState.instance.songSpeed;
+			_note._updateNoteFrame(this);
+
+			@:bypassAccessor
+			{
+				_note.x = x
+					+ (!_note.isSustain ? 0 : initial_width - Std.int(_note.width) >> 1)
+					+ ((scrollMult < 0 ? -scrollMult : scrollMult) * _note.distance) * FlxMath.fastCos(FlxAngle.asRadians(_note.direction - 90));
+				_note.y = y
+					+ (!_note.isSustain ? 0 : initial_height >> 1)
+					+ (scrollMult * _note.distance) * FlxMath.fastSin(FlxAngle.asRadians(_note.direction - 90));
 			}
 		}
 	}
 
-	inline private function spawnNote(position:Int, sustainLength:NoteState.UInt16)
+	inline private function spawnNote(position:Int, length:NoteState.UInt16)
 	{
 		var note:NoteObject = _notePool.pop();
 
 		if (note == null)
 		{
-			note = new NoteObject(this, false);
+			note = new NoteObject(false);
+			note.color = parent.noteColors[noteData];
 			notes.push(note);
 		}
 
+		note.isInPool = false;
 		note.renew(position, 0);
 		note.angle = angle;
 		@:bypassAccessor note.exists = true;
 
-		if (sustainLength > 20)
+		if (length > 20)
 		{
 			var sustain:NoteObject = _susPool.pop();
 
 			if (sustain == null)
 			{
-				sustain = new NoteObject(this, true);
+				sustain = new NoteObject(true);
+				sustain.color = parent.noteColors[noteData];
 				sustains.push(sustain);
 			}
 
-			sustain.renew(position, sustainLength);
+			sustain.isSustain = true;
+			sustain.isInPool = false;
+			sustain.renew(position, length);
 			sustain.angle = 0;
 			@:bypassAccessor sustain.exists = true;
 		}
@@ -316,11 +335,12 @@ class StrumNote extends FlxSprite
 	{
 		playAnim("pressed");
 
-		if (_hittableNote != Paths.idleNote)
+		if (_hittableNote != _idleNote)
 		{
 			_hittableNote.hit();
+			_hittableNote.isInPool = true;
 			_notePool.push(_hittableNote);
-			_hittableNote = Paths.idleNote;
+			_hittableNote = _idleNote;
 			playAnim("confirm");
 		}
 	}

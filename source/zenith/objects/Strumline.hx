@@ -135,10 +135,6 @@ class Strumline extends FlxBasic
 		x = (y = 60) + (Std.int(FlxG.width * 0.5587511111112 * lane));
 	}
 
-	override function update(elapsed:Float)
-	{
-	}
-
 	private var m(default, null):StrumNote;
 
 	override function draw()
@@ -149,7 +145,7 @@ class Strumline extends FlxBasic
 		for (i in 0...members.length)
 		{
 			m = members[i];
-			if (@:bypassAccessor m.exists && m.visible && m.alpha != 0)
+			if (@:bypassAccessor m.exists && m.alpha != 0)
 			{
 				if (m.active)
 					m.update(FlxG.elapsed);

@@ -7,7 +7,7 @@ class NoteObject extends FlxSprite
 {
 	// The data that is set from the chart for every time a note spawns
 	public var position:Int;
-	public var sustainLength:NoteState.UInt16;
+	public var length:NoteState.UInt16;
 
 	// For the sustain note
 	public var isSustain:Bool;
@@ -16,6 +16,8 @@ class NoteObject extends FlxSprite
 	public var direction:Single;
 
 	public var state:NoteState.UInt8;
+
+	private var isInPool:Bool; // Internal variable for efficiently checking if this is in its pool (Thank you https443 for the idea)
 
 	/**
 	 * Calculates the smallest globally aligned bounding box that encompasses this sprite's graphic as it
@@ -57,26 +59,21 @@ class NoteObject extends FlxSprite
 		return newRect.getRotatedBounds(angle, _scaledOrigin, newRect);
 	} // Please don't remove this
 
-	public function new(strum:StrumNote, sustain:Bool)
+	public function new(sustain:Bool)
 	{
 		super();
 
 		@:bypassAccessor active = moves = false;
 
-		if (strum != null)
-			color = strum.parent.noteColors[strum.noteData];
-
-		isSustain = sustain;
-
-		loadGraphic(Paths.image(!isSustain ? 'ui/noteskins/Regular/Note' : 'ui/noteskins/Regular/Sustain'));
+		loadGraphic(Paths.image(!sustain ? 'ui/noteskins/Regular/Note' : 'ui/noteskins/Regular/Sustain'));
 	}
 
-	inline public function renew(_position:Int, _sustainLength:NoteState.UInt16)
+	inline public function renew(pos:Int, len:NoteState.UInt16)
 	{
 		state = NoteState.IDLE;
 
-		position = _position;
-		sustainLength = _sustainLength;
+		position = pos;
+		length = len;
 
 		direction = 0;
 
@@ -103,7 +100,7 @@ class NoteObject extends FlxSprite
 		{
 			if (isSustain)
 			{
-				_frame.frame.y = -sustainLength * ((PlayState.instance.songSpeed * 0.45) / strum.scale.y);
+				_frame.frame.y = -length * ((PlayState.instance.songSpeed * 0.45) / strum.scale.y);
 				_frame.frame.height = (-_frame.frame.y * (strum.scrollMult < 0 ? -strum.scrollMult : strum.scrollMult)) + frameHeight;
 				angle = direction;
 

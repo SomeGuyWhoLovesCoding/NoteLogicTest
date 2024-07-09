@@ -17,7 +17,7 @@ class PlayState extends FlxState
 	{
 		FlxG.fixedTimestep = false;
 
-		Paths.initNoteShit();
+		NoteskinHandler.reload();
 
 		instance = this;
 
@@ -67,7 +67,7 @@ class PlayState extends FlxState
 
 		for (i in 0...1024)
 		{
-			inputKeybinds.push(Paths.idleStrumNote);
+			inputKeybinds.push(NoteskinHandler.idleStrumNote);
 		}
 
 		for (i in 0...binds.length)
@@ -83,7 +83,7 @@ class PlayState extends FlxState
 
 	inline function onKeyDown(keyCode:Int, keyMod:Int)
 	{
-		st = inputKeybinds[keyCode % 1024] ?? Paths.idleStrumNote;
+		st = inputKeybinds[keyCode % 1024] ?? NoteskinHandler.idleStrumNote;
 
 		if (!st.active)
 		{
@@ -93,7 +93,7 @@ class PlayState extends FlxState
 
 	inline function onKeyUp(keyCode:Int, keyMod:Int)
 	{
-		st = inputKeybinds[keyCode % 1024] ?? Paths.idleStrumNote;
+		st = inputKeybinds[keyCode % 1024] ?? NoteskinHandler.idleStrumNote;
 
 		if (st.active)
 		{
