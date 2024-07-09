@@ -269,7 +269,8 @@ class StrumNote extends FlxSprite
 
 		if (note == null)
 		{
-			notes.push(note = new NoteObject(this, false));
+			note = new NoteObject(this, false);
+			notes.push(note);
 		}
 
 		note.renew(position, 0);
@@ -282,7 +283,8 @@ class StrumNote extends FlxSprite
 
 			if (sustain == null)
 			{
-				sustains.push(sustain = new NoteObject(this, true));
+				sustain = new NoteObject(this, true);
+				sustains.push(sustain);
 			}
 
 			sustain.renew(position, sustainLength);
