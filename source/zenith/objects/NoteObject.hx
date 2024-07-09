@@ -57,24 +57,23 @@ class NoteObject extends FlxSprite
 		return newRect.getRotatedBounds(angle, _scaledOrigin, newRect);
 	} // Please don't remove this
 
-	public function new(strum:StrumNote = null)
+	public function new(strum:StrumNote, sustain:Bool)
 	{
 		super();
 
 		@:bypassAccessor active = moves = false;
 
 		if (strum != null)
-		{
 			color = strum.parent.noteColors[strum.noteData];
-		}
-	}
 
-	inline public function renew(sustain:Bool, _position:Int, _sustainLength:NoteState.UInt16 = 0)
-	{
 		isSustain = sustain;
-		state = NoteState.IDLE;
 
 		loadGraphic(Paths.image(!isSustain ? 'ui/noteskins/Regular/Note' : 'ui/noteskins/Regular/Sustain'));
+	}
+
+	inline public function renew(_position:Int, _sustainLength:NoteState.UInt16)
+	{
+		state = NoteState.IDLE;
 
 		position = _position;
 		sustainLength = _sustainLength;
@@ -89,8 +88,6 @@ class NoteObject extends FlxSprite
 	{
 	}
 
-	// Does this really need to be inlined?
-	// Yes.
 	inline public function hit()
 	{
 		if (state != NoteState.HIT)
@@ -127,6 +124,6 @@ class NoteObject extends FlxSprite
 
 	override function set_clipRect(rect:FlxRect):FlxRect
 	{
-		return @:bypassAccessor clipRect = rect;
+		return clipRect = rect;
 	}
 }

@@ -68,7 +68,7 @@ class Paths
 		strumNoteAnimationHolder.animation.addByPrefix('confirm', 'confirm', 24, false);
 
 		if (idleNote == null)
-			idleNote = new NoteObject();
+			idleNote = new NoteObject(null, false);
 
 		if (idleStrumNote == null)
 			idleStrumNote = new StrumNote();

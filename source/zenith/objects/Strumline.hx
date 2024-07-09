@@ -208,5 +208,5 @@ class Strumline extends FlxBasic
 	public var singSuffix:String = "";
 	public var singAnimations:Array<String> = ["LEFT", "DOWN", "UP", "RIGHT"];
 	public var noteColors:Array<Int> = [0xFF9966BB, 0xFF00FFFF, 0xFF00FF00, 0xFFFF0000];
-	public var noteAngles:Array<Int> = [0, -90, 90, 180];
+	public var noteAngles:Array<Single> = [0, -90, 90, 180];
 }

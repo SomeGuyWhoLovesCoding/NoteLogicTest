@@ -21,6 +21,7 @@ class StrumNote extends FlxSprite
 
 	var initial_width:NoteState.UInt8;
 	var initial_height:NoteState.UInt8;
+	var _holding:Bool;
 
 	public var parent:Strumline;
 	public var index:NoteState.UInt8;
@@ -33,7 +34,6 @@ class StrumNote extends FlxSprite
 		player = plr;
 
 		_hittableNote = Paths.idleNote;
-		_hittableSustain = Paths.idleNote;
 
 		@:bypassAccessor moves = false;
 	}
@@ -52,11 +52,11 @@ class StrumNote extends FlxSprite
 
 	override function update(elapsed:Float)
 	{
-		if (active)
+		if (@:bypassAccessor active)
 			animation.update(elapsed);
 	}
 
-	inline public function playAnim(anim:String)
+	public function playAnim(anim:String)
 	{
 		@:bypassAccessor active = anim != "static";
 		color = !active ? 0xffffffff : parent.noteColors[noteData];
@@ -74,11 +74,11 @@ class StrumNote extends FlxSprite
 
 	override function set_clipRect(rect:FlxRect):FlxRect
 	{
-		return @:bypassAccessor clipRect = rect;
+		return clipRect = rect;
 	}
 
 	// Please don't mess with this function.
-	inline function finishCallbackFunc(anim:String = "")
+	function finishCallbackFunc(anim:String = "")
 	{
 		if (!playable && @:bypassAccessor active)
 		{
@@ -112,18 +112,27 @@ class StrumNote extends FlxSprite
 	 * Basically, it has a target note variable named _hittableNote, which tracks the closest note to the strumnote.
 	 * It's currently unfinished but most of it is polished.
 	 */
-	// TODO: Implement the sustain logic
 	public var notes:Array<NoteObject> = [];
+	public var sustains:Array<NoteObject> = [];
 
 	var _notePool(default, null):Array<NoteObject> = [];
+	var _susPool(default, null):Array<NoteObject> = [];
 	var _note(default, null):NoteObject;
 	var _hittableNote(default, null):NoteObject; // The target note for the hitreg
-	var _hittableSustain(default, null):NoteObject; // The target sustain note
 
 	override function draw()
 	{
+		final oldDefaultCameras = FlxCamera._defaultCameras;
+		if (_cameras != null)
+		{
+			FlxCamera._defaultCameras = _cameras;
+		}
+
+		renderSustains();
 		super.draw();
 		renderNotes();
+
+		FlxCamera._defaultCameras = oldDefaultCameras;
 	}
 
 	override function destroy()
@@ -134,29 +143,28 @@ class StrumNote extends FlxSprite
 		{
 			notes[i].destroy();
 		}
+
+		for (i in 0...sustains.length)
+		{
+			sustains[i].destroy();
+		}
 	}
 
-	function renderNotes()
+	function renderSustains()
 	{
-		final oldDefaultCameras = FlxCamera._defaultCameras;
-		if (_cameras != null)
+		if (sustains.length != 0)
 		{
-			FlxCamera._defaultCameras = _cameras;
-		}
-
-		if (notes.length != 0)
-		{
-			for (i in 0...notes.length)
+			for (i in 0...sustains.length)
 			{
-				_note = notes[i];
+				_note = sustains[i];
 
 				if (@:bypassAccessor !_note.exists)
 					continue;
 
-				if (PlayState.instance.songPosition - _note.position > _note.sustainLength + 300)
+				if (PlayState.instance.songPosition - _note.position > _note.sustainLength + (500 / PlayState.instance.songSpeed))
 				{
 					@:bypassAccessor _note.exists = false;
-					_notePool.push(_note);
+					_susPool.push(_note);
 					continue;
 				}
 
@@ -165,40 +173,15 @@ class StrumNote extends FlxSprite
 
 				if (_note.state == NoteState.IDLE)
 				{
-					if (!_note.isSustain)
+					// Literally the sustain logic system
+
+					_holding = @:bypassAccessor animation.curAnim.name == "confirm"
+						&& PlayState.instance.songPosition > _note.position
+						&& PlayState.instance.songPosition < _note.position + (_note.sustainLength - 50);
+
+					if (_holding)
 					{
-						if (!playable)
-						{
-							if (PlayState.instance.songPosition > _note.position)
-							{
-								_note.hit();
-								playAnim("confirm");
-							}
-						}
-
-						if ((_hittableNote == Paths.idleNote && _note.position - PlayState.instance.songPosition < 150)
-							|| (_hittableNote.state == NoteState.HIT || _hittableNote.position > _note.position))
-							// TODO: Implement a center target feature for the target note (basically targeting the closest note to the strumnote constantly)
-						{
-							_hittableNote = _note;
-						}
-
-						if (_hittableNote != Paths.idleNote && PlayState.instance.songPosition - _hittableNote.position > 200)
-						{
-							_hittableNote.state = NoteState.MISS;
-							_hittableNote = Paths.idleNote;
-						}
-					}
-					else
-					{
-						// Literally the sustain logic system
-
-						if (@:bypassAccessor animation.curAnim.name == "confirm"
-							&& PlayState.instance.songPosition > _note.position
-							&& PlayState.instance.songPosition < _note.position + (_note.sustainLength - 50))
-						{
-							playAnim("confirm");
-						}
+						playAnim("confirm");
 					}
 				}
 
@@ -216,34 +199,118 @@ class StrumNote extends FlxSprite
 				}
 			}
 		}
-
-		FlxCamera._defaultCameras = oldDefaultCameras;
 	}
 
-	inline public function spawnNote(position:Int, sustainLength:NoteState.UInt16 = 0)
+	function renderNotes()
 	{
-		var note:NoteObject = _notePool.pop() ?? (notes[notes.length] = new NoteObject(this));
-		note.renew(false, position);
+		if (notes.length != 0)
+		{
+			for (i in 0...notes.length)
+			{
+				_note = notes[i];
+
+				if (@:bypassAccessor !_note.exists)
+					continue;
+
+				if (PlayState.instance.songPosition - _note.position > _note.sustainLength + (500 / PlayState.instance.songSpeed))
+				{
+					@:bypassAccessor _note.exists = false;
+					_notePool.push(_note);
+					continue;
+				}
+
+				if (@:bypassAccessor _note.visible && _note.alpha != 0)
+					_note.draw();
+
+				if (_note.state == NoteState.IDLE)
+				{
+					if (!playable)
+					{
+						if (PlayState.instance.songPosition > _note.position)
+						{
+							_note.hit();
+							playAnim("confirm");
+						}
+					}
+
+					if ((_hittableNote == Paths.idleNote && _note.position - PlayState.instance.songPosition < (250 / PlayState.instance.songSpeed))
+						|| (_hittableNote.state == NoteState.HIT || _hittableNote.position > _note.position))
+						// TODO: Implement a center target feature for the target note (basically targeting the closest note to the strumnote constantly)
+					{
+						_hittableNote = _note;
+					}
+
+					if (_hittableNote != Paths.idleNote && PlayState.instance.songPosition - _hittableNote.position > (250 / PlayState.instance.songSpeed))
+					{
+						_hittableNote.state = NoteState.MISS;
+						_hittableNote = Paths.idleNote;
+					}
+				}
+
+				_note.distance = 0.45 * (PlayState.instance.songPosition - _note.position) * PlayState.instance.songSpeed;
+				_note._updateNoteFrame(this);
+
+				@:bypassAccessor
+				{
+					_note.x = x
+						+ (!_note.isSustain ? 0 : initial_width - Std.int(_note.width) >> 1)
+						+ ((scrollMult < 0 ? -scrollMult : scrollMult) * _note.distance) * FlxMath.fastCos(FlxAngle.asRadians(_note.direction - 90));
+					_note.y = y
+						+ (!_note.isSustain ? 0 : initial_height >> 1)
+						+ (scrollMult * _note.distance) * FlxMath.fastSin(FlxAngle.asRadians(_note.direction - 90));
+				}
+			}
+		}
+	}
+
+	inline public function spawnNote(position:Int, sustainLength:NoteState.UInt16)
+	{
+		var note:NoteObject = _notePool.pop();
+
+		if (note == null)
+		{
+			notes.push(note = new NoteObject(this, false));
+		}
+
+		note.renew(position, 0);
 		note.angle = angle;
 		@:bypassAccessor note.exists = true;
 
 		if (sustainLength > 20 && !note.isSustain)
 		{
-			var note:NoteObject = _notePool.pop() ?? (notes[notes.length] = new NoteObject(this));
-			note.renew(true, position, sustainLength);
-			note.angle = 0;
-			@:bypassAccessor note.exists = true;
+			var sustain:NoteObject = _susPool.pop();
+
+			if (sustain == null)
+			{
+				sustains.push(sustain = new NoteObject(this, true));
+			}
+
+			sustain.renew(position, sustainLength);
+			sustain.angle = 0;
+			@:bypassAccessor sustain.exists = true;
 		}
 	}
 
 	// Only 2 lines of code for the hitreg behaviour (not including the if condition)
-	inline public function handlePress()
+	public function handlePress()
 	{
+		playAnim("pressed");
 		if (_hittableNote != Paths.idleNote)
 		{
 			_hittableNote.hit();
 			_hittableNote = Paths.idleNote;
 			playAnim("confirm");
+		}
+	}
+
+	public function handleRelease()
+	{
+		playAnim("static");
+
+		if (_holding)
+		{
+			trace('Sustain miss $noteData');
+			_holding = false;
 		}
 	}
 }

@@ -87,7 +87,6 @@ class PlayState extends FlxState
 
 		if (!st.active)
 		{
-			st.playAnim("pressed");
 			st.handlePress();
 		}
 	}
@@ -98,7 +97,7 @@ class PlayState extends FlxState
 
 		if (st.active)
 		{
-			st.playAnim("static");
+			st.handleRelease();
 		}
 	}
 
@@ -107,10 +106,10 @@ class PlayState extends FlxState
 	override public function update(elapsed:Float)
 	{
 		songPosition += elapsed * 1000;
-		//chartBytesData.update();
+		chartBytesData.update();
 
-		if (songPosition + 700 > _songPos)
-			strumlines[1].members[FlxG.random.int(0, 3)].spawnNote(Std.int(_songPos += 120));
+		//if (songPosition + 700 > _songPos)
+			//strumlines[1].members[FlxG.random.int(0, 3)].spawnNote(Std.int(_songPos += 120));
 
 		super.update(elapsed);
 	}

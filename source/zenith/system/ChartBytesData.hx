@@ -74,7 +74,7 @@ class ChartBytesData
 
 	// This chart note data is 8 bytes in size for each note
 	// Proof: Int32 (4 bytes), UInt8 (1 byte), UInt16 (2 bytes), and UInt8 (1 byte again)
-	var position(default, null):Int;
+	var position(default, null):Int = 0;
 
 	public function update()
 	{
@@ -155,18 +155,18 @@ class ChartBytesData
 		var nd:Array<Array<Float>> = json.noteData; // Workaround for the dynamic iteration error
 		for (note in nd)
 		{
+			// Basically writeInt32
+			inline output.writeByte(Std.int(note[0]) & 0xFF);
+			inline output.writeByte((Std.int(note[0]) >> 8) & 0xFF);
+			inline output.writeByte((Std.int(note[0]) >> 16) & 0xFF);
+			inline output.writeByte(Std.int(note[0]) >>> 24);
+
 			inline output.writeByte(Std.int(note[3]));
 			inline output.writeByte(Std.int(note[1]));
 
 			// Basically writeUInt16
 			inline output.writeByte(Std.int(note[2]) & 0xFF);
 			inline output.writeByte(Std.int(note[2]) >> 8);
-
-			// Basically writeInt32
-			inline output.writeByte(Std.int(note[0]) & 0xFF);
-			inline output.writeByte((Std.int(note[0]) >> 8) & 0xFF);
-			inline output.writeByte((Std.int(note[0]) >> 16) & 0xFF);
-			inline output.writeByte(Std.int(note[0]) >>> 24);
 		}
 
 		output.close(); // LMAO
@@ -214,10 +214,10 @@ class ChartBytesData
 		{
 			try
 			{
+				_position = (inline _input.readByte()) | (inline _input.readByte() << 8) | (inline _input.readByte() << 16) | (inline _input.readByte() << 24);
 				_lane = inline _input.readByte();
 				_noteData = inline _input.readByte();
 				_susLen = (inline _input.readByte()) | (inline _input.readByte() << 8);
-				_position = (inline _input.readByte()) | (inline _input.readByte() << 8) | (inline _input.readByte() << 16) | (inline _input.readByte() << 24);
 				noteData.push([_position, _noteData, _susLen, _lane]);
 			}
 			catch (e)
