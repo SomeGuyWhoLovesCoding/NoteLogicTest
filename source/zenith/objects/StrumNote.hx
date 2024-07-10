@@ -120,7 +120,6 @@ class StrumNote extends FlxSprite
 
 	private var _notePool(default, null):Array<NoteObject> = [];
 	private var _susPool(default, null):Array<NoteObject> = [];
-	private var _note(default, null):NoteObject;
 	private var _hittableNote(default, null):NoteObject; // The target note for the hitreg
 
 	override function draw()
@@ -166,6 +165,10 @@ class StrumNote extends FlxSprite
 			return;
 		}
 
+		var _sp = PlayState.instance.songPosition;
+		var _ss = PlayState.instance.songSpeed;
+		var _note = NoteskinHandler.idleNote;
+
 		for (i in 0...sustains.length)
 		{
 			_note = sustains[i];
@@ -181,7 +184,7 @@ class StrumNote extends FlxSprite
 				continue;
 			}
 
-			if (PlayState.instance.songPosition - _note.position > _note.length + (500 / PlayState.instance.songSpeed))
+			if (_sp - _note.position > _note.length + (500 / _ss))
 			{
 				@:bypassAccessor _note.exists = false;
 			}
@@ -195,17 +198,15 @@ class StrumNote extends FlxSprite
 			{
 				// Literally the sustain logic system
 
-				_holding = @:bypassAccessor animation.curAnim.name == "confirm"
-					&& PlayState.instance.songPosition > _note.position
-					&& PlayState.instance.songPosition < _note.position + (_note.length - 50);
-
-				if (_holding)
+				if (_holding = @:bypassAccessor animation.curAnim.name == "confirm"
+					&& _sp > _note.position
+					&& _sp < _note.position + (_note.length - 50))
 				{
 					playAnim("confirm");
 				}
 			}
 
-			_note.distance = 0.45 * (PlayState.instance.songPosition - _note.position) * PlayState.instance.songSpeed;
+			_note.distance = 0.45 * (_sp - _note.position) * _ss;
 			_note._updateNoteFrame(this);
 
 			@:bypassAccessor
@@ -227,6 +228,10 @@ class StrumNote extends FlxSprite
 			return;
 		}
 
+		var _sp = PlayState.instance.songPosition;
+		var _ss = PlayState.instance.songSpeed;
+		var _note = NoteskinHandler.idleNote;
+
 		for (i in 0...notes.length)
 		{
 			_note = notes[i];
@@ -242,7 +247,7 @@ class StrumNote extends FlxSprite
 				continue;
 			}
 
-			if (PlayState.instance.songPosition - _note.position > _note.length + (500 / PlayState.instance.songSpeed))
+			if (_sp - _note.position > _note.length + (500 / _ss))
 			{
 				@:bypassAccessor _note.exists = false;
 			}
@@ -256,7 +261,7 @@ class StrumNote extends FlxSprite
 			{
 				if (!playable)
 				{
-					if (PlayState.instance.songPosition > _note.position)
+					if (_sp > _note.position)
 					{
 						_note.hit();
 						_note.isInPool = true;
@@ -265,21 +270,21 @@ class StrumNote extends FlxSprite
 					}
 				}
 
-				if ((_hittableNote == _idleNote && _note.position - PlayState.instance.songPosition < (250 / PlayState.instance.songSpeed))
+				if ((_hittableNote == _idleNote && _note.position - _sp < (250 / _ss))
 					|| (_hittableNote.state == NoteState.HIT || _hittableNote.position > _note.position))
 					// TODO: Implement a center target feature for the target note (basically targeting the closest note to the strumnote constantly)
 				{
 					_hittableNote = _note;
 				}
 
-				if (_hittableNote != _idleNote && PlayState.instance.songPosition - _hittableNote.position > (250 / PlayState.instance.songSpeed))
+				if (_hittableNote != _idleNote && _sp - _hittableNote.position > (250 / _ss))
 				{
 					_hittableNote.state = NoteState.MISS;
 					_hittableNote = _idleNote;
 				}
 			}
 
-			_note.distance = 0.45 * (PlayState.instance.songPosition - _note.position) * PlayState.instance.songSpeed;
+			_note.distance = 0.45 * (_sp - _note.position) * _ss;
 			_note._updateNoteFrame(this);
 
 			@:bypassAccessor
