@@ -46,26 +46,40 @@ class NoteObject extends FlxSprite
 			newRect.x = x;
 			newRect.y = y;
 
-			_scaledOrigin.x = origin.x * scale.x;
-			_scaledOrigin.y = origin.y * scale.y;
+			var scaleX = scale.x;
+			var scaleY = scale.y;
 
-			newRect.x += (-Std.int(camera.scroll.x * scrollFactor.x) - offset.x + origin.x - _scaledOrigin.x);
-			newRect.y += (-Std.int(camera.scroll.y * scrollFactor.y) - offset.y + origin.y - _scaledOrigin.y);
+			var originX = origin.x;
+			var originY = origin.y;
 
-			newRect.width = _frame.frame.width * (scale.x < 0 ? -scale.x : scale.x);
-			newRect.height = _frame.frame.height * (scale.y < 0 ? -scale.y : scale.y);
+			_scaledOrigin.x = originX * scaleX;
+			_scaledOrigin.y = originY * scaleY;
+
+			newRect.x += (-Std.int(camera.scroll.x * scrollFactor.x) - offset.x + originX - _scaledOrigin.x);
+			newRect.y += (-Std.int(camera.scroll.y * scrollFactor.y) - offset.y + originY - _scaledOrigin.y);
+
+			newRect.width = _frame.frame.width * (scaleX < 0 ? -scaleX : scaleX);
+			newRect.height = _frame.frame.height * (scaleY < 0 ? -scaleY : scaleY);
 		}
 
 		return newRect.getRotatedBounds(angle, _scaledOrigin, newRect);
 	} // Please don't remove this
 
-	public function new(sustain:Bool)
+	var _sustain:Bool;
+	public function new(sustain:Bool, noteskin:Int = 0)
 	{
 		super();
 
 		@:bypassAccessor active = moves = false;
 
-		loadGraphic(Paths.image(!sustain ? 'ui/noteskins/Regular/Note' : 'ui/noteskins/Regular/Sustain'));
+		_sustain = sustain;
+		selectNoteskin(noteskin);
+	}
+
+	public function selectNoteskin(noteskin:Int)
+	{
+		var noteskin = NoteskinHandler.noteskins[noteskin];
+		loadGraphic(!_sustain ? noteskin.noteBMD : noteskin.sustainBMD);
 	}
 
 	inline public function renew(pos:Int, len:NoteState.UInt16)
@@ -100,15 +114,18 @@ class NoteObject extends FlxSprite
 		{
 			if (isSustain)
 			{
+				var _scrollMult = strum.scrollMult;
+
 				_frame.frame.y = -length * ((PlayState.instance.songSpeed * 0.45) / strum.scale.y);
-				_frame.frame.height = (-_frame.frame.y * (strum.scrollMult < 0 ? -strum.scrollMult : strum.scrollMult)) + frameHeight;
+				_frame.frame.height = (-_frame.frame.y * (_scrollMult < 0 ? -_scrollMult : _scrollMult)) + frameHeight;
 				angle = direction;
 
-				if (strum.scrollMult < 0)
+				if (_scrollMult < 0)
 					angle += 180;
 			}
 
-			height = _frame.frame.height * (scale.y < 0 ? -scale.y : scale.y);
+			var scaleY = scale.y;
+			height = _frame.frame.height * (scaleY < 0 ? -scaleY : scaleY);
 
 			offset.x = offset.y = 0;
 			origin.x = frameWidth >> 1;

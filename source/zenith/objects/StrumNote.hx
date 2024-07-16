@@ -26,8 +26,6 @@ class StrumNote extends FlxSprite
 	public var parent:Strumline;
 	public var index:NoteState.UInt8;
 
-	private var _idleNote:NoteObject; // For faster access to the NoteskinHandler.idleNote variable
-
 	public function new(data:NoteState.UInt8 = 0, plr:NoteState.UInt8 = 0)
 	{
 		super();
@@ -37,7 +35,7 @@ class StrumNote extends FlxSprite
 
 		scrollMult = 1.0;
 
-		_idleNote = _hittableNote = NoteskinHandler.idleNote;
+		_hittableNote = NoteskinHandler.idleNote;
 
 		@:bypassAccessor moves = false;
 	}
@@ -165,13 +163,13 @@ class StrumNote extends FlxSprite
 			return;
 		}
 
-		var _sp = PlayState.instance.songPosition;
-		var _ss = PlayState.instance.songSpeed;
-		var _note = NoteskinHandler.idleNote;
+		var _songPosition = PlayState.instance.songPosition, _songSpeed = PlayState.instance.songSpeed, _notePosition,
+			_note = NoteskinHandler.idleNote, _idleNote = NoteskinHandler.idleNote;
 
 		for (i in 0...sustains.length)
 		{
 			_note = sustains[i];
+			_notePosition = _note.position;
 
 			if (@:bypassAccessor !_note.exists)
 			{
@@ -184,7 +182,7 @@ class StrumNote extends FlxSprite
 				continue;
 			}
 
-			if (_sp - _note.position > _note.length + (500 / _ss))
+			if (_songPosition - _notePosition > _note.length + (500 / _songSpeed))
 			{
 				@:bypassAccessor _note.exists = false;
 			}
@@ -199,14 +197,14 @@ class StrumNote extends FlxSprite
 				// Literally the sustain logic system
 
 				if (_holding = @:bypassAccessor animation.curAnim.name == "confirm"
-					&& _sp > _note.position
-					&& _sp < _note.position + (_note.length - 50))
+					&& _songPosition > _notePosition
+					&& _songPosition < _notePosition + (_note.length - 50))
 				{
 					playAnim("confirm");
 				}
 			}
 
-			_note.distance = 0.45 * (_sp - _note.position) * _ss;
+			_note.distance = 0.45 * (_songPosition - _notePosition) * _songSpeed;
 			_note._updateNoteFrame(this);
 
 			@:bypassAccessor
@@ -228,13 +226,15 @@ class StrumNote extends FlxSprite
 			return;
 		}
 
-		var _sp = PlayState.instance.songPosition;
-		var _ss = PlayState.instance.songSpeed;
-		var _note = NoteskinHandler.idleNote;
+		// Variables list (For even faster field access)
+		var _songPosition = PlayState.instance.songPosition, _songSpeed = PlayState.instance.songSpeed,
+			_notePosition, _hittablePosition = _hittableNote.position, _noteHitbox = Std.int(250 / _songSpeed),
+			_note = NoteskinHandler.idleNote, _idleNote = NoteskinHandler.idleNote;
 
 		for (i in 0...notes.length)
 		{
 			_note = notes[i];
+			_notePosition = _note.position;
 
 			if (@:bypassAccessor !_note.exists)
 			{
@@ -247,7 +247,7 @@ class StrumNote extends FlxSprite
 				continue;
 			}
 
-			if (_sp - _note.position > _note.length + (500 / _ss))
+			if (_songPosition - _notePosition > _note.length + (_noteHitbox << 1))
 			{
 				@:bypassAccessor _note.exists = false;
 			}
@@ -261,7 +261,7 @@ class StrumNote extends FlxSprite
 			{
 				if (!playable)
 				{
-					if (_sp > _note.position)
+					if (_songPosition > _notePosition)
 					{
 						_note.hit();
 						_note.isInPool = true;
@@ -269,22 +269,29 @@ class StrumNote extends FlxSprite
 						playAnim("confirm");
 					}
 				}
-
-				if ((_hittableNote == _idleNote && _note.position - _sp < (250 / _ss))
-					|| (_hittableNote.state == NoteState.HIT || _hittableNote.position > _note.position))
-					// TODO: Implement a center target feature for the target note (basically targeting the closest note to the strumnote constantly)
+				else
 				{
-					_hittableNote = _note;
-				}
-
-				if (_hittableNote != _idleNote && _sp - _hittableNote.position > (250 / _ss))
-				{
-					_hittableNote.state = NoteState.MISS;
-					_hittableNote = _idleNote;
+					if (_hittableNote != _idleNote)
+					{
+						if (_songPosition - _hittablePosition > _noteHitbox)
+						{
+							_hittableNote.state = NoteState.MISS;
+							_hittableNote = _idleNote;
+						}
+					}
+					else
+					{
+						if (_notePosition - _songPosition < _noteHitbox
+							|| (_hittableNote.state == NoteState.HIT || _hittablePosition > _notePosition))
+						{
+							_hittablePosition = _notePosition;
+							_hittableNote = _note;
+						}
+					}
 				}
 			}
 
-			_note.distance = 0.45 * (_sp - _note.position) * _ss;
+			_note.distance = 0.45 * (_songPosition - _notePosition) * _songSpeed;
 			_note._updateNoteFrame(this);
 
 			@:bypassAccessor
@@ -299,7 +306,7 @@ class StrumNote extends FlxSprite
 		}
 	}
 
-	inline private function spawnNote(position:Int, length:NoteState.UInt16)
+	private function spawnNote(position:Int, length:NoteState.UInt16)
 	{
 		var note:NoteObject = _notePool.pop();
 
@@ -336,9 +343,11 @@ class StrumNote extends FlxSprite
 
 	// The rest of the input stuff
 
-	inline public function handlePress()
+	public function handlePress()
 	{
 		playAnim("pressed");
+
+		var _idleNote = NoteskinHandler.idleNote;
 
 		if (_hittableNote != _idleNote)
 		{
@@ -350,7 +359,7 @@ class StrumNote extends FlxSprite
 		}
 	}
 
-	inline public function handleRelease()
+	public function handleRelease()
 	{
 		playAnim("static");
 

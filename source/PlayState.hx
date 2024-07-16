@@ -17,11 +17,11 @@ class PlayState extends FlxState
 	{
 		FlxG.fixedTimestep = false;
 
-		NoteskinHandler.reload();
-
 		instance = this;
 
 		chartBytesData = new ChartBytesData('normal');
+
+		NoteskinHandler.reload(chartBytesData.global_noteskin);
 
 		// FlxG.cameras.bgColor = 0xFF999999;
 		FlxG.camera.bgColor.alpha = 0;

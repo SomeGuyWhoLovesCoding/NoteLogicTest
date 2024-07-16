@@ -9,6 +9,7 @@ import sys.io.File;
 class ChartBytesData
 {
 	public var input:FileInput;
+	public var global_noteskin:String;
 
 	var bytesTotal(default, null):Int = 1;
 
@@ -19,23 +20,26 @@ class ChartBytesData
 
 		input = File.read('assets/data/$songName.bin');
 
+		var global_noteskin_len = input.readByte();
+		global_noteskin = input.readString(global_noteskin_len);
+
 		var song_len = input.readByte();
-		var song:String = input.readString(song_len);
+		var song = input.readString(song_len);
 
 		var speed = input.readDouble();
 		var bpm = input.readDouble();
 
 		var player1_len = input.readByte();
-		var player1:String = input.readString(player1_len);
+		var player1 = input.readString(player1_len);
 
 		var player2_len = input.readByte();
-		var player2:String = input.readString(player2_len);
+		var player2 = input.readString(player2_len);
 
 		var spectator_len = input.readByte();
-		var spectator:String = input.readString(spectator_len);
+		var spectator = input.readString(spectator_len);
 
 		var stage_len = input.readByte();
-		var stage:String = input.readString(stage_len);
+		var stage = input.readString(stage_len);
 
 		var steps = input.readByte();
 		var beats = input.readByte();
@@ -85,7 +89,9 @@ class ChartBytesData
 
 		while (PlayState.instance.songPosition > position - (1880.0 / PlayState.instance.songSpeed))
 		{
-			PlayState.instance.strumlines[inline input.readByte()].members[inline input.readByte()].spawnNote(position, inline input.readByte() | (inline input.readByte() << 8));
+			var lane = inline input.readByte(), noteData = inline input.readByte(), length = inline input.readByte() | (inline input.readByte() << 8);
+
+			PlayState.instance.strumlines[lane].members[noteData].spawnNote(position, length);
 
 			if (input.tell() == bytesTotal)
 			{
@@ -99,7 +105,7 @@ class ChartBytesData
 	}
 
 	// Internal helper function
-	inline function _moveToNext()
+	function _moveToNext()
 	{
 		position = (inline input.readByte()) | (inline input.readByte() << 8) | (inline input.readByte() << 16) | (inline input.readByte() << 24);
 	}
@@ -113,6 +119,10 @@ class ChartBytesData
 		trace('Done! Now let\'s start writing to "assets/data/$songName.bin".');
 
 		var output:FileOutput = File.write('assets/data/$songName.bin');
+
+		json.noteskin = json.noteskin ?? "Regular";
+		inline output.writeByte(json.noteskin.length);
+		output.writeString(json.noteskin);
 
 		// Song
 		inline output.writeByte(json.song.length);
@@ -155,20 +165,27 @@ class ChartBytesData
 		inline output.writeByte(json.info.strumlines);
 
 		var nd:Array<Array<Float>> = json.noteData; // Workaround for the dynamic iteration error
-		for (note in nd)
+
+		for (i in 0...nd.length)
 		{
+			var note = nd[i];
+
+			var position = Std.int(note[0]);
+
 			// Basically writeInt32
-			inline output.writeByte(Std.int(note[0]) & 0xFF);
-			inline output.writeByte((Std.int(note[0]) >> 8) & 0xFF);
-			inline output.writeByte((Std.int(note[0]) >> 16) & 0xFF);
-			inline output.writeByte(Std.int(note[0]) >>> 24);
+			inline output.writeByte(position & 0xFF);
+			inline output.writeByte((position >> 8) & 0xFF);
+			inline output.writeByte((position >> 16) & 0xFF);
+			inline output.writeByte(position >>> 24);
 
 			inline output.writeByte(Std.int(note[3]));
 			inline output.writeByte(Std.int(note[1]));
 
+			var length = Std.int(note[2]);
+
 			// Basically writeUInt16
-			inline output.writeByte(Std.int(note[2]) & 0xFF);
-			inline output.writeByte(Std.int(note[2]) >> 8);
+			inline output.writeByte(length & 0xFF);
+			inline output.writeByte(length >> 8);
 		}
 
 		output.close(); // LMAO
@@ -182,23 +199,26 @@ class ChartBytesData
 
 		trace('Done! Now let\'s start writing to "assets/data/$songName.json".');
 
+		var noteskin_len = _input.readByte();
+		var noteskin = _input.readString(noteskin_len);
+
 		var song_len = _input.readByte();
-		var song:String = _input.readString(song_len);
+		var song = _input.readString(song_len);
 
 		var speed = _input.readDouble();
 		var bpm = _input.readDouble();
 
 		var player1_len = _input.readByte();
-		var player1:String = _input.readString(player1_len);
+		var player1 = _input.readString(player1_len);
 
 		var player2_len = _input.readByte();
-		var player2:String = _input.readString(player2_len);
+		var player2 = _input.readString(player2_len);
 
 		var spectator_len = _input.readByte();
-		var spectator:String = _input.readString(spectator_len);
+		var spectator = _input.readString(spectator_len);
 
 		var stage_len = _input.readByte();
-		var stage:String = _input.readString(stage_len);
+		var stage = _input.readString(stage_len);
 
 		var steps = _input.readByte();
 		var beats = _input.readByte();
@@ -207,28 +227,18 @@ class ChartBytesData
 		var strumlines = _input.readByte();
 
 		var noteData:Array<Array<Float>> = [];
-		var _lane:NoteState.UInt8 = 0;
-		var _noteData:NoteState.UInt8 = 0;
-		var _susLen:NoteState.UInt16 = 0;
-		var _position:Int = 0;
+		var _lane = 0, _noteData = 0, _susLen = 0, _position = 0;
 
-		while (true)
+		while (!_input.eof())
 		{
-			try
-			{
-				_position = (inline _input.readByte()) | (inline _input.readByte() << 8) | (inline _input.readByte() << 16) | (inline _input.readByte() << 24);
-				_lane = inline _input.readByte();
-				_noteData = inline _input.readByte();
-				_susLen = (inline _input.readByte()) | (inline _input.readByte() << 8);
-				noteData.push([_position, _noteData, _susLen, _lane]);
-			}
-			catch (e)
-			{
-				break;
-			}
+			_position = (inline _input.readByte()) | (inline _input.readByte() << 8) | (inline _input.readByte() << 16) | (inline _input.readByte() << 24);
+			_lane = inline _input.readByte();
+			_noteData = inline _input.readByte();
+			_susLen = (inline _input.readByte()) | (inline _input.readByte() << 8);
+			noteData.push([_position, _noteData, _susLen, _lane]);
 		}
 
 		File.saveContent('assets/data/$songName.json',
-			'{"song":"$song","info":{"stage":"$stage","player1":"$player1","player2":"$player2","spectator":"$spectator","speed":$speed,"bpm":$bpm,"time_signature":[$beats, $steps],"needsVoices":$needsVoices,"strumlines":$strumlines},"noteData":$noteData}');
+			'{"noteskin":"$noteskin","song":"$song","info":{"stage":"$stage","player1":"$player1","player2":"$player2","spectator":"$spectator","speed":$speed,"bpm":$bpm,"time_signature":[$beats, $steps],"needsVoices":$needsVoices,"strumlines":$strumlines},"noteData":$noteData}');
 	}
 }
