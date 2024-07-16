@@ -66,6 +66,7 @@ class NoteObject extends FlxSprite
 	} // Please don't remove this
 
 	var _sustain:Bool;
+
 	public function new(sustain:Bool, noteskin:Int = 0)
 	{
 		super();

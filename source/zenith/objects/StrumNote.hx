@@ -163,8 +163,11 @@ class StrumNote extends FlxSprite
 			return;
 		}
 
-		var _songPosition = PlayState.instance.songPosition, _songSpeed = PlayState.instance.songSpeed, _notePosition,
-			_note = NoteskinHandler.idleNote, _idleNote = NoteskinHandler.idleNote;
+		var _songPosition = PlayState.instance.songPosition,
+			_songSpeed = PlayState.instance.songSpeed,
+			_notePosition,
+			_note = NoteskinHandler.idleNote,
+			_idleNote = NoteskinHandler.idleNote;
 
 		for (i in 0...sustains.length)
 		{
@@ -198,7 +201,8 @@ class StrumNote extends FlxSprite
 
 				if (_holding = @:bypassAccessor animation.curAnim.name == "confirm"
 					&& _songPosition > _notePosition
-					&& _songPosition < _notePosition + (_note.length - 50))
+					&& _songPosition < _notePosition
+					+ (_note.length - 50))
 				{
 					playAnim("confirm");
 				}
@@ -227,9 +231,13 @@ class StrumNote extends FlxSprite
 		}
 
 		// Variables list (For even faster field access)
-		var _songPosition = PlayState.instance.songPosition, _songSpeed = PlayState.instance.songSpeed,
-			_notePosition, _hittablePosition = _hittableNote.position, _noteHitbox = Std.int(250 / _songSpeed),
-			_note = NoteskinHandler.idleNote, _idleNote = NoteskinHandler.idleNote;
+		var _songPosition = PlayState.instance.songPosition,
+			_songSpeed = PlayState.instance.songSpeed,
+			_notePosition,
+			_hittablePosition = _hittableNote.position,
+			_noteHitbox = Std.int(250 / _songSpeed),
+			_note = NoteskinHandler.idleNote,
+			_idleNote = NoteskinHandler.idleNote;
 
 		for (i in 0...notes.length)
 		{
@@ -365,7 +373,7 @@ class StrumNote extends FlxSprite
 
 		if (_holding)
 		{
-			//trace('Sustain miss $noteData');
+			// trace('Sustain miss $noteData');
 			_holding = false;
 		}
 	}

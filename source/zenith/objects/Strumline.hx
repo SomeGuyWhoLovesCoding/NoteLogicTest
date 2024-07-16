@@ -38,7 +38,7 @@ class Strumline extends FlxBasic
 		moveX(value);
 		return x = value;
 	}
-	
+
 	public var y(default, set):NoteState.UInt16;
 
 	private function set_y(value:NoteState.UInt16):NoteState.UInt16

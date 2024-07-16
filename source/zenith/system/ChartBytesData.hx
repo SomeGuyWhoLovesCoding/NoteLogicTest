@@ -5,7 +5,6 @@ import sys.io.FileOutput;
 import sys.io.File;
 
 @:access(zenith.objects.StrumNote)
-
 class ChartBytesData
 {
 	public var input:FileInput;
@@ -89,7 +88,9 @@ class ChartBytesData
 
 		while (PlayState.instance.songPosition > position - (1880.0 / PlayState.instance.songSpeed))
 		{
-			var lane = inline input.readByte(), noteData = inline input.readByte(), length = inline input.readByte() | (inline input.readByte() << 8);
+			var lane = inline input.readByte(),
+				noteData = inline input.readByte(),
+				length = inline input.readByte() | (inline input.readByte() << 8);
 
 			PlayState.instance.strumlines[lane].members[noteData].spawnNote(position, length);
 
