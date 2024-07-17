@@ -62,7 +62,7 @@ class NoteObject extends FlxSprite
 			newRect.height = _frame.frame.height * (scaleY < 0 ? -scaleY : scaleY);
 		}
 
-		return newRect.getRotatedBounds(angle, _scaledOrigin, newRect);
+		return newRect.getRotatedBounds(@:bypassAccessor angle, _scaledOrigin, newRect);
 	} // Please don't remove this
 
 	var _sustain:Bool;
@@ -74,10 +74,10 @@ class NoteObject extends FlxSprite
 		@:bypassAccessor active = moves = false;
 
 		_sustain = sustain;
-		selectNoteskin(noteskin);
+		changeNoteskin(noteskin);
 	}
 
-	public function selectNoteskin(noteskin:Int)
+	public function changeNoteskin(noteskin:Int)
 	{
 		var noteskin = NoteskinHandler.noteskins[noteskin];
 		loadGraphic(!_sustain ? noteskin.noteBMD : noteskin.sustainBMD);
