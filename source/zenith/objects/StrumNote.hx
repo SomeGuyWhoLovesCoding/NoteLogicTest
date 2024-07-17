@@ -213,10 +213,10 @@ class StrumNote extends FlxSprite
 			@:bypassAccessor
 			{
 				_note.x = x
-					+ (!_note.isSustain ? 0 : initial_width - Std.int(_note.width) >> 1)
+					+ (initial_width - Std.int(@:bypassAccessor _note.width) >> 1)
 					+ ((_scrollMult < 0 ? -_scrollMult : _scrollMult) * _note.distance) * FlxMath.fastCos(FlxAngle.asRadians(_note.direction - 90));
 				_note.y = y
-					+ (!_note.isSustain ? 0 : initial_height >> 1)
+					+ (initial_height >> 1)
 					+ (_scrollMult * _note.distance) * FlxMath.fastSin(FlxAngle.asRadians(_note.direction - 90));
 			}
 		}
@@ -301,10 +301,8 @@ class StrumNote extends FlxSprite
 			@:bypassAccessor
 			{
 				_note.x = x
-					+ (!_note.isSustain ? 0 : initial_width - Std.int(_note.width) >> 1)
 					+ ((_scrollMult < 0 ? -_scrollMult : _scrollMult) * _note.distance) * FlxMath.fastCos(FlxAngle.asRadians(_note.direction - 90));
 				_note.y = y
-					+ (!_note.isSustain ? 0 : initial_height >> 1)
 					+ (_scrollMult * _note.distance) * FlxMath.fastSin(FlxAngle.asRadians(_note.direction - 90));
 			}
 		}
