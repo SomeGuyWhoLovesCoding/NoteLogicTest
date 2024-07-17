@@ -7,7 +7,8 @@ class Strumline extends FlxBasic
 
 	private function set_keys(value:NoteState.UInt8):NoteState.UInt8
 	{
-		for (i in 0...value)
+		var val = value;
+		for (i in 0...val)
 		{
 			m = members[i] = new StrumNote(i, lane);
 			m.scale.x = m.scale.y = scale;
@@ -16,15 +17,15 @@ class Strumline extends FlxBasic
 			m._reset();
 		}
 
-		if (value <= keys)
+		if (val <= keys)
 		{
-			members.resize(value);
+			members.resize(val);
 		}
 
 		moveX(x);
 		moveY(y);
 
-		return keys = value;
+		return keys = val;
 	}
 
 	public var lane:NoteState.UInt8;
@@ -54,7 +55,8 @@ class Strumline extends FlxBasic
 		if (members.length == 0)
 			return alpha;
 
-		for (i in 0...members.length)
+		var len = members.length;
+		for (i in 0...len)
 		{
 			members[i].alpha = value;
 		}
@@ -86,7 +88,8 @@ class Strumline extends FlxBasic
 
 		scale = value;
 
-		for (i in 0...members.length)
+		var len = members.length;
+		for (i in 0...len)
 		{
 			members[i].scale.set(scale, scale);
 		}
@@ -103,7 +106,8 @@ class Strumline extends FlxBasic
 		if (members.length == 0)
 			return playable;
 
-		for (i in 0...members.length)
+		var len = members.length;
+		for (i in 0...len)
 		{
 			members[i].playable = value;
 		}
@@ -145,7 +149,7 @@ class Strumline extends FlxBasic
 		for (i in 0...members.length)
 		{
 			m = members[i];
-			if (@:bypassAccessor m.exists && m.alpha != 0)
+			if (m.visible)
 			{
 				if (m.active)
 					m.update(FlxG.elapsed);
@@ -159,7 +163,8 @@ class Strumline extends FlxBasic
 		if (members.length == 0)
 			return;
 
-		for (i in 0...members.length)
+		var len = members.length;
+		for (i in 0...len)
 		{
 			@:bypassAccessor members[i].x = x + (gap * i);
 		}
@@ -170,7 +175,8 @@ class Strumline extends FlxBasic
 		if (members.length == 0)
 			return;
 
-		for (i in 0...members.length)
+		var len = members.length;
+		for (i in 0...len)
 		{
 			@:bypassAccessor members[i].y = y;
 		}
@@ -186,7 +192,8 @@ class Strumline extends FlxBasic
 
 	public function updateHitbox()
 	{
-		for (i in 0...members.length)
+		var len = members.length;
+		for (i in 0...len)
 		{
 			m = members[i];
 			@:bypassAccessor
