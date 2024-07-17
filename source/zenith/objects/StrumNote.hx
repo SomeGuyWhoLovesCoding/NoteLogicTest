@@ -81,7 +81,7 @@ class StrumNote extends FlxSprite
 	// Please don't mess with this function.
 	inline private function finishCallbackFunc(anim:String = "")
 	{
-		if (!playable && @:bypassAccessor active)
+		if (!playable && active)
 		{
 			@:bypassAccessor active = false;
 			color = 0xffffffff;
@@ -145,12 +145,14 @@ class StrumNote extends FlxSprite
 	{
 		super.destroy();
 
-		for (i in 0...notes.length)
+		var len = notes.length;
+		for (i in 0...len)
 		{
 			notes[i].destroy();
 		}
 
-		for (i in 0...sustains.length)
+		var len = sustains.length;
+		for (i in 0...len)
 		{
 			sustains[i].destroy();
 		}
@@ -165,9 +167,9 @@ class StrumNote extends FlxSprite
 
 		var _songPosition = PlayState.instance.songPosition, _songSpeed = PlayState.instance.songSpeed, _notePosition, _scrollMult = scrollMult,
 			_note = NoteskinHandler.idleNote, _idleNote = NoteskinHandler.idleNote,
-		    ;
+		    len = sustains.length;
 
-		for (i in 0...sustains.length)
+		for (i in 0...len)
 		{
 			_note = sustains[i];
 			_notePosition = _note.position;
@@ -230,9 +232,10 @@ class StrumNote extends FlxSprite
 		// Variables list (For even faster field access)
 		var _songPosition = PlayState.instance.songPosition, _songSpeed = PlayState.instance.songSpeed,
 			_notePosition, _hittablePosition = _hittableNote.position, _noteHitbox = Std.int(250 / _songSpeed), _scrollMult = scrollMult,
-			_note = NoteskinHandler.idleNote, _idleNote = NoteskinHandler.idleNote;
+			_note = NoteskinHandler.idleNote, _idleNote = NoteskinHandler.idleNote,
+		    len = notes.length;
 
-		for (i in 0...notes.length)
+		for (i in 0...len)
 		{
 			_note = notes[i];
 			_notePosition = _note.position;
