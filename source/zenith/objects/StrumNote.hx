@@ -163,8 +163,9 @@ class StrumNote extends FlxSprite
 			return;
 		}
 
-		var _songPosition = PlayState.instance.songPosition, _songSpeed = PlayState.instance.songSpeed, _notePosition,
-			_note = NoteskinHandler.idleNote, _idleNote = NoteskinHandler.idleNote;
+		var _songPosition = PlayState.instance.songPosition, _songSpeed = PlayState.instance.songSpeed, _notePosition, _scrollMult = scrollMult,
+			_note = NoteskinHandler.idleNote, _idleNote = NoteskinHandler.idleNote,
+		    ;
 
 		for (i in 0...sustains.length)
 		{
@@ -187,7 +188,7 @@ class StrumNote extends FlxSprite
 				@:bypassAccessor _note.exists = false;
 			}
 
-			if (@:bypassAccessor _note.visible && _note.alpha != 0)
+			if (_note.visible)
 			{
 				_note.draw();
 			}
@@ -211,10 +212,10 @@ class StrumNote extends FlxSprite
 			{
 				_note.x = x
 					+ (!_note.isSustain ? 0 : initial_width - Std.int(_note.width) >> 1)
-					+ ((scrollMult < 0 ? -scrollMult : scrollMult) * _note.distance) * FlxMath.fastCos(FlxAngle.asRadians(_note.direction - 90));
+					+ ((_scrollMult < 0 ? -_scrollMult : _scrollMult) * _note.distance) * FlxMath.fastCos(FlxAngle.asRadians(_note.direction - 90));
 				_note.y = y
 					+ (!_note.isSustain ? 0 : initial_height >> 1)
-					+ (scrollMult * _note.distance) * FlxMath.fastSin(FlxAngle.asRadians(_note.direction - 90));
+					+ (_scrollMult * _note.distance) * FlxMath.fastSin(FlxAngle.asRadians(_note.direction - 90));
 			}
 		}
 	}
@@ -228,7 +229,7 @@ class StrumNote extends FlxSprite
 
 		// Variables list (For even faster field access)
 		var _songPosition = PlayState.instance.songPosition, _songSpeed = PlayState.instance.songSpeed,
-			_notePosition, _hittablePosition = _hittableNote.position, _noteHitbox = Std.int(250 / _songSpeed),
+			_notePosition, _hittablePosition = _hittableNote.position, _noteHitbox = Std.int(250 / _songSpeed), _scrollMult = scrollMult,
 			_note = NoteskinHandler.idleNote, _idleNote = NoteskinHandler.idleNote;
 
 		for (i in 0...notes.length)
@@ -252,7 +253,7 @@ class StrumNote extends FlxSprite
 				@:bypassAccessor _note.exists = false;
 			}
 
-			if (@:bypassAccessor _note.visible && _note.alpha != 0)
+			if (_note.visible)
 			{
 				_note.draw();
 			}
@@ -298,10 +299,10 @@ class StrumNote extends FlxSprite
 			{
 				_note.x = x
 					+ (!_note.isSustain ? 0 : initial_width - Std.int(_note.width) >> 1)
-					+ ((scrollMult < 0 ? -scrollMult : scrollMult) * _note.distance) * FlxMath.fastCos(FlxAngle.asRadians(_note.direction - 90));
+					+ ((_scrollMult < 0 ? -_scrollMult : _scrollMult) * _note.distance) * FlxMath.fastCos(FlxAngle.asRadians(_note.direction - 90));
 				_note.y = y
 					+ (!_note.isSustain ? 0 : initial_height >> 1)
-					+ (scrollMult * _note.distance) * FlxMath.fastSin(FlxAngle.asRadians(_note.direction - 90));
+					+ (_scrollMult * _note.distance) * FlxMath.fastSin(FlxAngle.asRadians(_note.direction - 90));
 			}
 		}
 	}
