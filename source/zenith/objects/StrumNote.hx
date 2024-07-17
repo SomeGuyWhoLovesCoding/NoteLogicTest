@@ -42,7 +42,7 @@ class StrumNote extends FlxSprite
 
 	inline public function _reset()
 	{
-		@:bypassAccessor angle = parent.noteAngles[noteData];
+		angle = parent.noteAngles[noteData];
 		frames = NoteskinHandler.strumNoteAnimationHolder.frames;
 		animation.copyFrom(NoteskinHandler.strumNoteAnimationHolder.animation);
 		playAnim("static");
@@ -233,7 +233,7 @@ class StrumNote extends FlxSprite
 		var _songPosition = PlayState.instance.songPosition, _songSpeed = PlayState.instance.songSpeed,
 			_notePosition, _hittablePosition = _hittableNote.position, _noteHitbox = Std.int(250 / _songSpeed), _scrollMult = scrollMult,
 			_note = NoteskinHandler.idleNote, _idleNote = NoteskinHandler.idleNote,
-		    len = notes.length;
+		    len = notes.length, _hittableAlreadyHit = _hittableNote.state == NoteState.HIT, _hittableValid = _hittableNote != _idleNote;
 
 		for (i in 0...len)
 		{
@@ -275,7 +275,7 @@ class StrumNote extends FlxSprite
 				}
 				else
 				{
-					if (_hittableNote != _idleNote)
+					if (_hittableValid)
 					{
 						if (_songPosition - _hittablePosition > _noteHitbox)
 						{
@@ -286,7 +286,7 @@ class StrumNote extends FlxSprite
 					else
 					{
 						if (_notePosition - _songPosition < _noteHitbox
-							|| (_hittableNote.state == NoteState.HIT || _hittablePosition > _notePosition))
+							|| (_hittableAlreadyHit || _hittablePosition > _notePosition))
 						{
 							_hittablePosition = _notePosition;
 							_hittableNote = _note;

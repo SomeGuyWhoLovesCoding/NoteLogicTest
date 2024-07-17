@@ -65,21 +65,20 @@ class NoteObject extends FlxSprite
 		return newRect.getRotatedBounds(@:bypassAccessor angle, _scaledOrigin, newRect);
 	} // Please don't remove this
 
-	var _sustain:Bool;
-
 	public function new(sustain:Bool, noteskin:Int = 0)
 	{
 		super();
 
 		@:bypassAccessor active = moves = false;
 
-		_sustain = sustain;
+		isSustain = sustain;
 		changeNoteskin(noteskin);
 	}
 
 	public function changeNoteskin(noteskin:Int)
 	{
 		var noteskin = NoteskinHandler.noteskins[noteskin];
+		var _sustain = isSustain;
 		loadGraphic(!_sustain ? noteskin.noteBMD : noteskin.sustainBMD);
 	}
 
